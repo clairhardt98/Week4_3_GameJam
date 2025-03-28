@@ -26,6 +26,9 @@ struct FMatrix
 	static FVector4 TransformVector(const FVector4& v, const FMatrix& m);
 	static FMatrix CreateTranslationMatrix(const FVector& position);
 
+    // refactor
+	FVector operator*(const FVector& Other) const;
+
 
 	DirectX::XMMATRIX ToXMMATRIX() const
 	{

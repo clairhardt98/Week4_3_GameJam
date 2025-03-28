@@ -1019,6 +1019,7 @@ void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> Act
     ClearRenderArr();
 }
 
+// TO-DO: refactor
 void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     PrepareShader();
@@ -1029,6 +1030,14 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
             StaticMeshComp->GetWorldRotation(),
             StaticMeshComp->GetWorldScale()
         );
+
+
+        FBoundingBox worldBox = TransformBoundingBox(StaticMeshComp->GetBoundingBox(), Model);
+        // 프러스텀 내부에 있는 경우에만 렌더링 처리
+
+
+        if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
+
         // 최종 MVP 행렬
         FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
         // 노말 회전시 필요 행렬
@@ -1041,14 +1050,14 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         else
             UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
 
-        if (USkySphereComponent* skysphere = Cast<USkySphereComponent>(StaticMeshComp))
-        {
-            UpdateTextureConstant(skysphere->UOffset, skysphere->VOffset);
-        }
-        else
-        {
-            UpdateTextureConstant(0, 0);
-        }
+        //if (USkySphereComponent* skysphere = Cast<USkySphereComponent>(StaticMeshComp))
+        //{
+        //    UpdateTextureConstant(skysphere->UOffset, skysphere->VOffset);
+        //}
+        //else
+        //{
+        //    UpdateTextureConstant(0, 0);
+        //}
 
         if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
         {
@@ -1174,6 +1183,204 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
         }
     }
     PrepareShader();
+}
+
+TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorViewportClient> ActiveViewport)
+{
+    TArray<FrustumPlane> planes;
+    planes.SetNum(6);
+
+    FMatrix ViewMatrix = ActiveViewport->GetViewMatrix();
+    FMatrix ProjMatrix = ActiveViewport->GetProjectionMatrix();
+    FMatrix ViewProj = ViewMatrix * ProjMatrix;
+
+    // Left Plane: row3 + row0
+    planes[0].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][0];
+    planes[0].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][0];
+    planes[0].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][0];
+    planes[0].Distance = ViewProj.M[3][3] + ViewProj.M[3][0];
+
+    // Right Plane: row3 - row0
+    planes[1].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][0];
+    planes[1].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][0];
+    planes[1].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][0];
+    planes[1].Distance = ViewProj.M[3][3] - ViewProj.M[3][0];
+
+    // Bottom Plane: row3 + row1
+    planes[2].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][1];
+    planes[2].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][1];
+    planes[2].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][1];
+    planes[2].Distance = ViewProj.M[3][3] + ViewProj.M[3][1];
+
+    // Top Plane: row3 - row1
+    planes[3].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][1];
+    planes[3].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][1];
+    planes[3].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][1];
+    planes[3].Distance = ViewProj.M[3][3] - ViewProj.M[3][1];
+
+    // Near Plane: row3 + row2
+    planes[4].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][2];
+    planes[4].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][2];
+    planes[4].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][2];
+    planes[4].Distance = ViewProj.M[3][3] + ViewProj.M[3][2];
+
+    // Far Plane: row3 - row2
+    planes[5].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][2];
+    planes[5].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][2];
+    planes[5].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][2];
+    planes[5].Distance = ViewProj.M[3][3] - ViewProj.M[3][2];
+
+    /*
+    // Left Plane: row4 + row1
+    planes[0].Normal.x = ViewProj.M[3][0] + ViewProj.M[0][0];
+    planes[0].Normal.y = ViewProj.M[3][1] + ViewProj.M[0][1];
+    planes[0].Normal.z = ViewProj.M[3][2] + ViewProj.M[0][2];
+    planes[0].D = ViewProj.M[3][3] + ViewProj.M[0][3];
+
+    // Right Plane: row4 - row1
+    planes[1].Normal.x = ViewProj.M[3][0] - ViewProj.M[0][0];
+    planes[1].Normal.y = ViewProj.M[3][1] - ViewProj.M[0][1];
+    planes[1].Normal.z = ViewProj.M[3][2] - ViewProj.M[0][2];
+    planes[1].D = ViewProj.M[3][3] - ViewProj.M[0][3];
+
+    // Bottom Plane: row4 + row2
+    planes[2].Normal.x = ViewProj.M[3][0] + ViewProj.M[1][0];
+    planes[2].Normal.y = ViewProj.M[3][1] + ViewProj.M[1][1];
+    planes[2].Normal.z = ViewProj.M[3][2] + ViewProj.M[1][2];
+    planes[2].D = ViewProj.M[3][3] + ViewProj.M[1][3];
+
+    // Top Plane: row4 - row2
+    planes[3].Normal.x = ViewProj.M[3][0] - ViewProj.M[1][0];
+    planes[3].Normal.y = ViewProj.M[3][1] - ViewProj.M[1][1];
+    planes[3].Normal.z = ViewProj.M[3][2] - ViewProj.M[1][2];
+    planes[3].D = ViewProj.M[3][3] - ViewProj.M[1][3];
+
+    // Near Plane: row4 + row3
+    planes[4].Normal.x = ViewProj.M[3][0] + ViewProj.M[2][0];
+    planes[4].Normal.y = ViewProj.M[3][1] + ViewProj.M[2][1];
+    planes[4].Normal.z = ViewProj.M[3][2] + ViewProj.M[2][2];
+    planes[4].D = ViewProj.M[3][3] + ViewProj.M[2][3];
+
+    // Far Plane: row4 - row3
+    planes[5].Normal.x = ViewProj.M[3][0] - ViewProj.M[2][0];
+    planes[5].Normal.y = ViewProj.M[3][1] - ViewProj.M[2][1];
+    planes[5].Normal.z = ViewProj.M[3][2] - ViewProj.M[2][2];
+    planes[5].D = ViewProj.M[3][3] - ViewProj.M[2][3];
+    */
+
+    /*
+    // by minseokbae
+    // Left Plane: row4 + row1
+    // 4-2
+    planes[0].Normal.x = ViewProj.M[3][0] + ViewProj.M[1][0];
+    planes[0].Normal.y = ViewProj.M[3][1] + ViewProj.M[1][1];
+    planes[0].Normal.z = ViewProj.M[3][2] + ViewProj.M[1][2];
+    planes[0].D = ViewProj.M[3][3] - ViewProj.M[1][3];
+
+    // Right Plane: row4 - row1
+    // 4+2
+    planes[1].Normal.x = ViewProj.M[3][0] - ViewProj.M[1][0];
+    planes[1].Normal.y = ViewProj.M[3][1] - ViewProj.M[1][1];
+    planes[1].Normal.z = ViewProj.M[3][2] - ViewProj.M[1][2];
+    planes[1].D = ViewProj.M[3][3] + ViewProj.M[1][3];
+
+    // Bottom Plane: row4 + row2
+    // 4-3
+    planes[2].Normal.x = ViewProj.M[3][0] + ViewProj.M[2][0];
+    planes[2].Normal.y = ViewProj.M[3][1] + ViewProj.M[2][1];
+    planes[2].Normal.z = ViewProj.M[3][2] + ViewProj.M[2][2];
+    planes[2].D = ViewProj.M[3][3] - ViewProj.M[2][3];
+
+    // Top Plane: row4 - row2
+    // 4+3
+    planes[3].Normal.x = ViewProj.M[3][0] - ViewProj.M[2][0];
+    planes[3].Normal.y = ViewProj.M[3][1] - ViewProj.M[2][1];
+    planes[3].Normal.z = ViewProj.M[3][2] - ViewProj.M[2][2];
+    planes[3].D = ViewProj.M[3][3] + ViewProj.M[2][3];
+
+    // Near Plane: row4 + row3
+    planes[4].Normal.x = ViewProj.M[3][0] - ViewProj.M[0][0];
+    planes[4].Normal.y = ViewProj.M[3][1] - ViewProj.M[0][1];
+    planes[4].Normal.z = ViewProj.M[3][2] - ViewProj.M[0][2];
+    planes[4].D = ViewProj.M[3][3] - ViewProj.M[0][3];
+
+    // Far Plane: row4 - row3
+    planes[5].Normal.x = ViewProj.M[3][0] + ViewProj.M[0][0];
+    planes[5].Normal.y = ViewProj.M[3][1] + ViewProj.M[0][1];
+    planes[5].Normal.z = ViewProj.M[3][2] + ViewProj.M[0][2];
+    planes[5].D = ViewProj.M[3][3] + ViewProj.M[0][3];
+    */
+
+    // normalize
+    for (int i = 0; i < 6; i++)
+    {
+        float length = std::sqrt(
+            planes[i].Normal.x * planes[i].Normal.x +
+            planes[i].Normal.y * planes[i].Normal.y +
+            planes[i].Normal.z * planes[i].Normal.z
+        );
+        if (length != 0.0f) 
+        {
+            planes[i].Normal = FVector(
+                planes[i].Normal.x / length, 
+                planes[i].Normal.y / length, 
+                planes[i].Normal.z / length
+            );
+            planes[i].Distance /= length;
+        }
+    }
+
+    return planes;
+}
+
+FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localBox, const FMatrix& model)
+{
+    // 바운딩 박스의 8개 코너를 구함
+    FVector corners[8];
+    corners[0] = model * localBox.min;                                              // (min.x, min.y, min.z)
+    corners[1] = model * FVector(localBox.max.x, localBox.min.y, localBox.min.z);   // (max.x, min.y, min.z)
+    corners[2] = model * FVector(localBox.min.x, localBox.max.y, localBox.min.z);   // (min.x, max.y, min.z)
+    corners[3] = model * FVector(localBox.min.x, localBox.min.y, localBox.max.z);   // (min.x, min.y, max.z)
+    corners[4] = model * FVector(localBox.max.x, localBox.max.y, localBox.min.z);   // (max.x, max.y, min.z)
+    corners[5] = model * FVector(localBox.max.x, localBox.min.y, localBox.max.z);   // (max.x, min.y, max.z)
+    corners[6] = model * FVector(localBox.min.x, localBox.max.y, localBox.max.z);   // (min.x, max.y, max.z)
+    corners[7] = model * localBox.max;
+
+    FVector newMin = corners[0];
+    FVector newMax = corners[0];
+
+    for (int i = 1; i < 8; i++) {
+        newMin.x = std::min(newMin.x, corners[i].x);
+        newMin.y = std::min(newMin.y, corners[i].y);
+        newMin.z = std::min(newMin.z, corners[i].z);
+
+        newMax.x = std::max(newMax.x, corners[i].x);
+        newMax.y = std::max(newMax.y, corners[i].y);
+        newMax.z = std::max(newMax.z, corners[i].z);
+    }
+    return FBoundingBox(newMin, newMax);
+}
+
+bool FRenderer::IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes)
+{
+    for (int i = 0; i < 6; i++) {
+        FVector positive;
+        positive.x = (planes[i].Normal.x >= 0) ? box.max.x : box.min.x;
+        positive.y = (planes[i].Normal.y >= 0) ? box.max.y : box.min.y;
+        positive.z = (planes[i].Normal.z >= 0) ? box.max.z : box.min.z;
+
+        float distance = planes[i].Normal.Dot(positive) + planes[i].Distance;
+        // 해당 평면 밖에 있으면 컬링 처리
+        if (distance < 0)
+            return false; 
+    }
+    return true;
+}
+
+bool FRenderer::CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, const FBoundingBox& worldBox)
+{
+    auto planes = ExtractFrustumPlanes(ActiveViewport);
+    return IsBoxInsideFrustum(worldBox, planes);
 }
 
 void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)

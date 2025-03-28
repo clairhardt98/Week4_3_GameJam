@@ -9,6 +9,11 @@
 #include "Define.h"
 #include "Container/Set.h"
 
+struct FrustumPlane {
+    FVector Normal;
+    float Distance;
+};
+
 class ULightComponentBase;
 class UWorld;
 class FGraphicsDevice;
@@ -143,6 +148,15 @@ public: // line shader
     void RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderBillboards(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
+
+    static TArray<FrustumPlane> ExtractFrustumPlanes(std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    FBoundingBox TransformBoundingBox(const FBoundingBox& localBox, const FMatrix& model);
+    bool IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes);
+    bool CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, const FBoundingBox& worldBox);
+
+private:
+
+
 private:
     TArray<StaticMeshComp*> StaticMeshObjs;
     TArray<UGizmoBaseComponent*> GizmoObjs;
