@@ -40,6 +40,7 @@ void FEditorViewportClient::Tick(float DeltaTime)
     Input();
     UpdateViewMatrix();
     UpdateProjectionMatrix();
+    UpdateVP();
 
 }
 
@@ -143,6 +144,7 @@ void FEditorViewportClient::ResizeViewport(const DXGI_SWAP_CHAIN_DESC& swapchain
     AspectRatio = GEngineLoop.GetAspectRatio(GEngineLoop.graphicDevice.SwapChain);
     UpdateProjectionMatrix();
     UpdateViewMatrix();
+    UpdateVP();
 }
 void FEditorViewportClient::ResizeViewport(FRect Top, FRect Bottom, FRect Left, FRect Right)
 {
@@ -155,6 +157,7 @@ void FEditorViewportClient::ResizeViewport(FRect Top, FRect Bottom, FRect Left, 
     AspectRatio = GEngineLoop.GetAspectRatio(GEngineLoop.graphicDevice.SwapChain);
     UpdateProjectionMatrix();
     UpdateViewMatrix();
+    UpdateVP();
 }
 bool FEditorViewportClient::IsSelected(POINT point)
 {
@@ -267,7 +270,7 @@ void FEditorViewportClient::UpdateProjectionMatrix()
     if (IsPerspective()) {
         Projection = JungleMath::CreateProjectionMatrix(
             ViewFOV * (3.141592f / 180.0f),
-            GetViewport()->GetViewport().Width/ GetViewport()->GetViewport().Height,
+            GetViewport()->GetViewport().Width / GetViewport()->GetViewport().Height,
             nearPlane,
             farPlane
         );
@@ -290,6 +293,13 @@ void FEditorViewportClient::UpdateProjectionMatrix()
         );
     }
 }
+
+void FEditorViewportClient::UpdateVP()
+{
+    VP = View * Projection;
+}
+
+    
 
 bool FEditorViewportClient::IsOrtho() const
 {

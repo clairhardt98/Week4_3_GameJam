@@ -24,6 +24,17 @@ class FEditorViewportClient;
 class UBillboardComponent;
 class StaticMeshComp;
 class UGizmoBaseComponent;
+
+struct FRenderInstance
+{
+    OBJ::FStaticMeshRenderData* RenderData;
+    int SubMeshIndex;
+    FMatrix M, VP, NormalMatrix;
+    FVector4 UUIDColor;
+    bool bSelected;
+    FObjMaterialInfo* Material;
+};
+
 class FRenderer 
 {
 
@@ -83,7 +94,7 @@ public:
 
     // update
     void UpdateLightBuffer() const;
-    void UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const;
+    void UpdateConstant(const FMatrix& M, const FMatrix& VP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const;
     void UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const;
     void UpdateLitUnlitConstant(int isLit) const;
     void UpdateSubMeshConstant(bool isSelected) const;
