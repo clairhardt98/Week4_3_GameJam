@@ -133,6 +133,8 @@ public:
 
     FMatrix View;
     FMatrix Projection;
+    FMatrix VP;
+
 public: //Camera Movement
     void CameraMoveForward(float _Value);
     void CameraMoveRight(float _Value);
@@ -144,8 +146,10 @@ public: //Camera Movement
 
     FMatrix& GetViewMatrix() { return  View; }
     FMatrix& GetProjectionMatrix() { return Projection; }
+    FMatrix& GetVP() { return VP; }
     void UpdateViewMatrix();
     void UpdateProjectionMatrix();
+    void UpdateVP();
 
     bool IsOrtho() const;
     bool IsPerspective() const;
