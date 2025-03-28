@@ -2,9 +2,9 @@
 #include "Components/StaticMeshComponent.h"
 
 
-class UGizmoBaseComponent : public UStaticMeshComponent
+class UGizmoBaseComponent : public StaticMeshComp
 {
-    DECLARE_CLASS(UGizmoBaseComponent, UStaticMeshComponent)
+    DECLARE_CLASS(UGizmoBaseComponent, StaticMeshComp)
 
 public:
     enum GizmoType : uint8

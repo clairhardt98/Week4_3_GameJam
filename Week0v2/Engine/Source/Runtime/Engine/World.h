@@ -13,7 +13,7 @@ class AEditorPlayer;
 class USceneComponent;
 class UTransformGizmo;
 
-
+struct SceneData;
 class UWorld : public UObject
 {
     DECLARE_CLASS(UWorld, UObject)
@@ -21,8 +21,9 @@ class UWorld : public UObject
 public:
     UWorld() = default;
 
+    void LoadDefaultScene();
     void Initialize();
-    void CreateBaseObject();
+    void CreateBaseObject(const SceneData& InSceneData);
     void ReleaseBaseObject();
     void Tick(float DeltaTime);
     void Release();

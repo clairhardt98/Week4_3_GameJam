@@ -3,9 +3,9 @@
 #include "Engine/Texture.h"
 
 
-class USkySphereComponent : public UStaticMeshComponent
+class USkySphereComponent : public StaticMeshComp
 {
-    DECLARE_CLASS(USkySphereComponent, UStaticMeshComponent)
+    DECLARE_CLASS(USkySphereComponent, StaticMeshComp)
 
 public:
     USkySphereComponent();

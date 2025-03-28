@@ -2,7 +2,7 @@
 #include "Components/ActorComponent.h"
 #include "UnrealEd/EditorPanel.h"
 
-class UStaticMeshComponent;
+class StaticMeshComp;
 
 class PropertyEditorPanel : public UEditorPanel
 {
@@ -16,10 +16,10 @@ private:
     void HSVToRGB(float h, float s, float v, float& r, float& g, float& b) const;
 
     /* Static Mesh Settings */
-    void RenderForStaticMesh(UStaticMeshComponent* StaticMeshComp);
+    void RenderForStaticMesh(StaticMeshComp* StaticMeshComp);
     
     /* Materials Settings */
-    void RenderForMaterial(UStaticMeshComponent* StaticMeshComp);
+    void RenderForMaterial(StaticMeshComp* StaticMeshComp);
     void RenderMaterialView(UMaterial* Material);
     void RenderCreateMaterialView();
 private:
@@ -31,7 +31,7 @@ private:
     /* Material Property */
     int SelectedMaterialIndex = -1;
     int CurMaterialIndex = -1;
-    UStaticMeshComponent* SelectedStaticMeshComp = nullptr;
+    StaticMeshComp* SelectedStaticMeshComp = nullptr;
     FObjMaterialInfo tempMaterialInfo;
     bool IsCreateMaterial;
 };

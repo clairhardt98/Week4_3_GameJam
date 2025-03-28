@@ -9,8 +9,8 @@ class AStaticMeshActor : public AActor
 public:
     AStaticMeshActor();
 
-    UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }
+    StaticMeshComp* GetStaticMeshComponent() const { return StaticMeshComponent; }
 
 private:
-    UStaticMeshComponent* StaticMeshComponent = nullptr;
+    StaticMeshComp* StaticMeshComponent = nullptr;
 };

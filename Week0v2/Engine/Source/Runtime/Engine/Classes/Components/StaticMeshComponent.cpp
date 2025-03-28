@@ -6,14 +6,14 @@
 #include "UnrealEd/PrimitiveBatch.h"
 
 
-uint32 UStaticMeshComponent::GetNumMaterials() const
+uint32 StaticMeshComp::GetNumMaterials() const
 {
     if (staticMesh == nullptr) return 0;
 
     return staticMesh->GetMaterials().Num();
 }
 
-UMaterial* UStaticMeshComponent::GetMaterial(uint32 ElementIndex) const
+UMaterial* StaticMeshComp::GetMaterial(uint32 ElementIndex) const
 {
     if (staticMesh != nullptr)
     {
@@ -30,14 +30,14 @@ UMaterial* UStaticMeshComponent::GetMaterial(uint32 ElementIndex) const
     return nullptr;
 }
 
-uint32 UStaticMeshComponent::GetMaterialIndex(FName MaterialSlotName) const
+uint32 StaticMeshComp::GetMaterialIndex(FName MaterialSlotName) const
 {
     if (staticMesh == nullptr) return -1;
 
     return staticMesh->GetMaterialIndex(MaterialSlotName);
 }
 
-TArray<FName> UStaticMeshComponent::GetMaterialSlotNames() const
+TArray<FName> StaticMeshComp::GetMaterialSlotNames() const
 {
     TArray<FName> MaterialNames;
     if (staticMesh == nullptr) return MaterialNames;
@@ -50,7 +50,7 @@ TArray<FName> UStaticMeshComponent::GetMaterialSlotNames() const
     return MaterialNames;
 }
 
-void UStaticMeshComponent::GetUsedMaterials(TArray<UMaterial*>& Out) const
+void StaticMeshComp::GetUsedMaterials(TArray<UMaterial*>& Out) const
 {
     if (staticMesh == nullptr) return;
     staticMesh->GetUsedMaterials(Out);
@@ -63,7 +63,7 @@ void UStaticMeshComponent::GetUsedMaterials(TArray<UMaterial*>& Out) const
     }
 }
 
-int UStaticMeshComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
+int StaticMeshComp::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
 {
     if (!AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance)) return 0;
     int nIntersections = 0;
