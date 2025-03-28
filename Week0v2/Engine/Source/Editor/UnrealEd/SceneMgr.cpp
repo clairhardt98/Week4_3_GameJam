@@ -11,6 +11,7 @@
 #include "Components/SkySphereComponent.h"
 #include "Camera/CameraComponent.h"
 #include "UObject/Casts.h"
+#include "Engine/StaticMeshActor.h"
 #include <Engine/FLoaderOBJ.h>
 
 using json = nlohmann::json;
@@ -38,11 +39,13 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
 
                 if (TypeName == StaticMeshComp::StaticClass()->GetName())
                 {
-                    obj = FObjectFactory::ConstructObject<StaticMeshComp>();
+                    AStaticMeshActor* actor = FObjectFactory::ConstructObject<AStaticMeshActor>();
+                    StaticMeshComp* staticMeshComp = actor->GetStaticMeshComponent();
+
+                    obj = staticMeshComp; // 기존과 동일하게 처리
                     if (value.contains("ObjStaticMeshAsset"))
                     {
                         FString MeshAssetPath = value["ObjStaticMeshAsset"].get<std::string>();
-                        StaticMeshComp* staticMeshComp = static_cast<StaticMeshComp*>(obj);
                         UStaticMesh* Mesh = FManagerOBJ::CreateStaticMesh(MeshAssetPath);
                         staticMeshComp->SetStaticMesh(Mesh);
                     }

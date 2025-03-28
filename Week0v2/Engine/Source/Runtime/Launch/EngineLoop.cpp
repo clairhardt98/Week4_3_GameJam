@@ -206,13 +206,14 @@ void FEngineLoop::Tick()
         GUObjectArray.ProcessPendingDestroyObjects();
 
         graphicDevice.SwapBuffer();
-        do
+       /* do
         {
             Sleep(0);
             QueryPerformanceCounter(&endTime);
             elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
         }
-        while (elapsedTime < targetFrameTime);
+        while (elapsedTime < targetFrameTime);*/
+        // 프레임 제한 해제
     }
 }
 
