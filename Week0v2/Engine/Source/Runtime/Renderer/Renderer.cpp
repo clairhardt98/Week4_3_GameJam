@@ -1024,6 +1024,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
 {
     PrepareShader();
     int i = 0;
+    int NumStaticMesh = 0;
 
     TArray<FRenderInstance> RenderQueue;
     for (StaticMeshComp* Comp : StaticMeshObjs)
@@ -1037,42 +1038,31 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         const FMatrix M = JungleMath::CreateModelMatrix(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
         const FMatrix VP = ActiveViewport->GetVP();
         const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(M));
-        const FVector4 UUIDColor = Comp->EncodeUUID() / 255.0f;
+        //const FVector4 UUIDColor = Comp->EncodeUUID() / 255.0f;
         const bool bSelected = (World->GetSelectedActor() == Comp->GetOwner());
 
-        for (int SubIdx = 0; SubIdx < RenderData->MaterialSubsets.Num(); ++SubIdx)
-        FMatrix Model = JungleMath::CreateModelMatrix(
-            StaticMeshComp->GetWorldLocation(),
-            StaticMeshComp->GetWorldRotation(),
-            StaticMeshComp->GetWorldScale()
-        );
-
-
-        FBoundingBox worldBox = TransformBoundingBox(StaticMeshComp->GetBoundingBox(),StaticMeshComp->GetWorldLocation(), Model);
         // 프러스텀 내부에 있는 경우에만 렌더링 처리
-
+        FBoundingBox worldBox = TransformBoundingBox(Comp->GetBoundingBox(), Comp->GetWorldLocation(), M);
         if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
 
-        // 노말 회전시 필요 행렬
-        FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-        FVector4 UUIDColor = StaticMeshComp->EncodeUUID() / 255.0f;
-        if (World->GetSelectedActor() == StaticMeshComp->GetOwner())
+        for (int SubIdx = 0; SubIdx < RenderData->MaterialSubsets.Num(); ++SubIdx)
         {
             int MatIndex = RenderData->MaterialSubsets[SubIdx].MaterialIndex;
             UMaterial* Mat = Overrides.IsValidIndex(MatIndex) && Overrides[MatIndex] ? Overrides[MatIndex] : Materials[MatIndex]->Material;
             if (!Mat) continue;
 
-            RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, UUIDColor, bSelected, &Mat->GetMaterialInfo() });
+            RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, FVector4(0,0,0,0) , bSelected, &Mat->GetMaterialInfo() });
         }
+        ++NumStaticMesh;
     }
 
-   
+
     RenderQueue.Sort([](const FRenderInstance& A, const FRenderInstance& B)
         {
             return A.Material < B.Material;
         });
 
-   
+
     FObjMaterialInfo* LastMaterial = nullptr;
     OBJ::FStaticMeshRenderData* LastMesh = nullptr;
 
@@ -1090,7 +1080,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         {
             UpdateMaterial(*R.Material);
             LastMaterial = R.Material;
-            UE_LOG(LogLevel::Warning,"%d", i);
+            UE_LOG(LogLevel::Warning, "%d", i);
             i++;
         }
 
@@ -1099,8 +1089,9 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         const auto& subset = R.RenderData->MaterialSubsets[R.SubMeshIndex];
         Graphics->DeviceContext->DrawIndexed(subset.IndexCount, subset.IndexStart, 0);
     }
-}
 
+    UE_LOG(LogLevel::Display, "Current StaticMesh: %d", NumStaticMesh);
+}
 void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
     if (!World->GetSelectedActor())
