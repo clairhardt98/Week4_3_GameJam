@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/c++,visualstudio
 # Edit at https://www.toptal.com/developers/gitignore?templates=c++,visualstudio
 
+.idea/
+.vscode/
+
 ### C++ ###
 # Prerequisites
 *.d
@@ -9,16 +12,23 @@
 *.slo
 *.lo
 *.o
-*.obj
+
+# 모든 .obj 및 .iobj 파일 무시
+.obj
+.iobj
+
+# Assets 폴더 아래의 .obj 파일은 다시 포함
+!Assets/**/*.obj
+
 
 # Precompiled Headers
 *.gch
 *.pch
 
 # Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# *.so
+# *.dylib
+# *.dll
 
 # Fortran module files
 *.mod
@@ -28,7 +38,7 @@
 *.lai
 *.la
 *.a
-*.lib
+
 
 # Executables
 *.exe
@@ -55,12 +65,14 @@
 mono_crash.*
 
 # Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
+Binaries/
+Intermediate/
+# [Dd]ebug/
+# [Dd]ebugPublic/
+# [Rr]elease/
+# [Rr]eleases/
+# x64/
+# x86/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
@@ -112,7 +124,7 @@ StyleCopReport.xml
 *_h.h
 *.ilk
 *.meta
-*.iobj
+
 *.pdb
 *.ipdb
 *.pgc
@@ -430,14 +442,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-.idea
 
 ### VisualStudio Patch ###
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,visualstudio
-
-*.ini
-*.Scene
-
-copilot-instruction.md
+*.bin
