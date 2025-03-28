@@ -151,7 +151,7 @@ public: // line shader
 
     // Frustum culling
     static TArray<FrustumPlane> ExtractFrustumPlanes(std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    FBoundingBox TransformBoundingBox(const FBoundingBox& localBox, const FMatrix& model);
+    FBoundingBox TransformBoundingBox(const FBoundingBox& localAABB, const FVector& center, const FMatrix& model);
     bool IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes);
     bool CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, const FBoundingBox& worldBox);
     // ~Frustum culling

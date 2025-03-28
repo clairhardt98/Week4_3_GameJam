@@ -1031,11 +1031,11 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
             StaticMeshComp->GetWorldScale()
         );
 
-        if (!CalculateFrustum(ActiveViewport, StaticMeshComp->AABB))
-        {
-            int a = 0;
-            continue;
-        }
+
+        FBoundingBox worldBox = TransformBoundingBox(StaticMeshComp->GetBoundingBox(),StaticMeshComp->GetWorldLocation(), Model);
+        // 프러스텀 내부에 있는 경우에만 렌더링 처리
+
+        if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
 
         // 최종 MVP 행렬
         FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
@@ -1330,6 +1330,43 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
     }
 
     return planes;
+}
+
+FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, const FVector& center, const FMatrix& model)
+{
+    FVector localVertices[8] = {
+         { localAABB.min.x, localAABB.min.y, localAABB.min.z },
+         { localAABB.max.x, localAABB.min.y, localAABB.min.z },
+         { localAABB.min.x, localAABB.max.y, localAABB.min.z },
+         { localAABB.max.x, localAABB.max.y, localAABB.min.z },
+         { localAABB.min.x, localAABB.min.y, localAABB.max.z },
+         { localAABB.max.x, localAABB.min.y, localAABB.max.z },
+         { localAABB.min.x, localAABB.max.y, localAABB.max.z },
+         { localAABB.max.x, localAABB.max.y, localAABB.max.z }
+    };
+
+    FVector worldVertices[8];
+    worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], model);
+
+    FVector min = worldVertices[0], max = worldVertices[0];
+
+    // 첫 번째 값을 제외한 나머지 버텍스를 변환하고 min/max 계산
+    for (int i = 1; i < 8; ++i)
+    {
+        worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
+
+        min.x = (worldVertices[i].x < min.x) ? worldVertices[i].x : min.x;
+        min.y = (worldVertices[i].y < min.y) ? worldVertices[i].y : min.y;
+        min.z = (worldVertices[i].z < min.z) ? worldVertices[i].z : min.z;
+
+        max.x = (worldVertices[i].x > max.x) ? worldVertices[i].x : max.x;
+        max.y = (worldVertices[i].y > max.y) ? worldVertices[i].y : max.y;
+        max.z = (worldVertices[i].z > max.z) ? worldVertices[i].z : max.z;
+    }
+    FBoundingBox BoundingBox;
+    BoundingBox.min = min;
+    BoundingBox.max = max;
+    return FBoundingBox(BoundingBox);
 }
 
 bool FRenderer::IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes)
