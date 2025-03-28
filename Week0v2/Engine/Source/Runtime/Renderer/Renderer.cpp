@@ -101,8 +101,8 @@ void FRenderer::PrepareShader() const
         Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &MaterialConstantBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(2, 1, &LightingBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(3, 1, &FlagBuffer);
+        //Graphics->DeviceContext->PSSetConstantBuffers(2, 1, &LightingBuffer);
+        //Graphics->DeviceContext->PSSetConstantBuffers(3, 1, &FlagBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(4, 1, &SubMeshConstantBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(5, 1, &TextureConstantBufer);
     }
@@ -979,43 +979,43 @@ void FRenderer::PrepareRender()
             if (!Cast<UGizmoBaseComponent>(iter))
                 StaticMeshObjs.Add(pStaticMeshComp);
         }
-        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
-        {
-            GizmoObjs.Add(pGizmoComp);
-        }
-        if (UBillboardComponent* pBillboardComp = Cast<UBillboardComponent>(iter))
-        {
-            BillboardObjs.Add(pBillboardComp);
-        }
-        if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
-        {
-            LightObjs.Add(pLightComp);
-        }
+        //if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
+        //{
+        //    GizmoObjs.Add(pGizmoComp);
+        //}
+        //if (UBillboardComponent* pBillboardComp = Cast<UBillboardComponent>(iter))
+        //{
+        //    BillboardObjs.Add(pBillboardComp);
+        //}
+        //if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
+        //{
+        //    LightObjs.Add(pLightComp);
+        //}
     }
 }
 
 void FRenderer::ClearRenderArr()
 {
     StaticMeshObjs.Empty();
-    GizmoObjs.Empty();
-    BillboardObjs.Empty();
-    LightObjs.Empty();
+    //GizmoObjs.Empty();
+    //BillboardObjs.Empty();
+    //LightObjs.Empty();
 }
 
 void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
-    Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
-    ChangeViewMode(ActiveViewport->GetViewMode());
-    UpdateLightBuffer();
+    //Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
+    //ChangeViewMode(ActiveViewport->GetViewMode());
+    //UpdateLightBuffer();
     UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
 
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
         RenderStaticMeshes(World, ActiveViewport);
-    RenderGizmos(World, ActiveViewport);
-    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
-        RenderBillboards(World, ActiveViewport);
-    RenderLight(World, ActiveViewport);
+    //RenderGizmos(World, ActiveViewport);
+    //if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
+    //    RenderBillboards(World, ActiveViewport);
+    //RenderLight(World, ActiveViewport);
     
     ClearRenderArr();
 }
@@ -1024,6 +1024,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
 {
     PrepareShader();
     int i = 0;
+    int NumStaticMesh = 0;
 
     TArray<FRenderInstance> RenderQueue;
     for (StaticMeshComp* Comp : StaticMeshObjs)
@@ -1037,8 +1038,12 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         const FMatrix M = JungleMath::CreateModelMatrix(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
         const FMatrix VP = ActiveViewport->GetVP();
         const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(M));
-        const FVector4 UUIDColor = Comp->EncodeUUID() / 255.0f;
+        //const FVector4 UUIDColor = Comp->EncodeUUID() / 255.0f;
         const bool bSelected = (World->GetSelectedActor() == Comp->GetOwner());
+
+        // 프러스텀 내부에 있는 경우에만 렌더링 처리
+        FBoundingBox worldBox = TransformBoundingBox(Comp->GetBoundingBox(), Comp->GetWorldLocation(), M);
+        if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
 
         for (int SubIdx = 0; SubIdx < RenderData->MaterialSubsets.Num(); ++SubIdx)
         {
@@ -1046,17 +1051,18 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
             UMaterial* Mat = Overrides.IsValidIndex(MatIndex) && Overrides[MatIndex] ? Overrides[MatIndex] : Materials[MatIndex]->Material;
             if (!Mat) continue;
 
-            RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, UUIDColor, bSelected, &Mat->GetMaterialInfo() });
+            RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, FVector4(0,0,0,0) , bSelected, &Mat->GetMaterialInfo() });
         }
+        ++NumStaticMesh;
     }
 
-   
+
     RenderQueue.Sort([](const FRenderInstance& A, const FRenderInstance& B)
         {
             return A.Material < B.Material;
         });
 
-   
+
     FObjMaterialInfo* LastMaterial = nullptr;
     OBJ::FStaticMeshRenderData* LastMesh = nullptr;
 
@@ -1074,7 +1080,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         {
             UpdateMaterial(*R.Material);
             LastMaterial = R.Material;
-            UE_LOG(LogLevel::Warning,"%d", i);
+            UE_LOG(LogLevel::Warning, "%d", i);
             i++;
         }
 
@@ -1083,8 +1089,9 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         const auto& subset = R.RenderData->MaterialSubsets[R.SubMeshIndex];
         Graphics->DeviceContext->DrawIndexed(subset.IndexCount, subset.IndexStart, 0);
     }
-}
 
+    UE_LOG(LogLevel::Display, "Current StaticMesh: %d", NumStaticMesh);
+}
 void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
     if (!World->GetSelectedActor())
@@ -1192,6 +1199,213 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
         }
     }
     PrepareShader();
+}
+
+TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorViewportClient> ActiveViewport)
+{
+    TArray<FrustumPlane> planes;
+    planes.SetNum(6);
+
+    FMatrix ViewMatrix = ActiveViewport->GetViewMatrix();
+    FMatrix ProjMatrix = ActiveViewport->GetProjectionMatrix();
+    FMatrix ViewProj = ViewMatrix * ProjMatrix;
+
+    // Left Plane: row3 + row0
+    planes[0].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][0];
+    planes[0].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][0];
+    planes[0].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][0];
+    planes[0].Distance = ViewProj.M[3][3] + ViewProj.M[3][0];
+
+    // Right Plane: row3 - row0
+    planes[1].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][0];
+    planes[1].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][0];
+    planes[1].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][0];
+    planes[1].Distance = ViewProj.M[3][3] - ViewProj.M[3][0];
+
+    // Bottom Plane: row3 + row1
+    planes[2].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][1];
+    planes[2].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][1];
+    planes[2].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][1];
+    planes[2].Distance = ViewProj.M[3][3] + ViewProj.M[3][1];
+
+    // Top Plane: row3 - row1
+    planes[3].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][1];
+    planes[3].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][1];
+    planes[3].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][1];
+    planes[3].Distance = ViewProj.M[3][3] - ViewProj.M[3][1];
+
+    // Near Plane: row3 + row2
+    planes[4].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][2];
+    planes[4].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][2];
+    planes[4].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][2];
+    planes[4].Distance = ViewProj.M[3][3] + ViewProj.M[3][2];
+
+    // Far Plane: row3 - row2
+    planes[5].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][2];
+    planes[5].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][2];
+    planes[5].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][2];
+    planes[5].Distance = ViewProj.M[3][3] - ViewProj.M[3][2];
+
+    /*
+    // Left Plane: row4 + row1
+    planes[0].Normal.x = ViewProj.M[3][0] + ViewProj.M[0][0];
+    planes[0].Normal.y = ViewProj.M[3][1] + ViewProj.M[0][1];
+    planes[0].Normal.z = ViewProj.M[3][2] + ViewProj.M[0][2];
+    planes[0].D = ViewProj.M[3][3] + ViewProj.M[0][3];
+
+    // Right Plane: row4 - row1
+    planes[1].Normal.x = ViewProj.M[3][0] - ViewProj.M[0][0];
+    planes[1].Normal.y = ViewProj.M[3][1] - ViewProj.M[0][1];
+    planes[1].Normal.z = ViewProj.M[3][2] - ViewProj.M[0][2];
+    planes[1].D = ViewProj.M[3][3] - ViewProj.M[0][3];
+
+    // Bottom Plane: row4 + row2
+    planes[2].Normal.x = ViewProj.M[3][0] + ViewProj.M[1][0];
+    planes[2].Normal.y = ViewProj.M[3][1] + ViewProj.M[1][1];
+    planes[2].Normal.z = ViewProj.M[3][2] + ViewProj.M[1][2];
+    planes[2].D = ViewProj.M[3][3] + ViewProj.M[1][3];
+
+    // Top Plane: row4 - row2
+    planes[3].Normal.x = ViewProj.M[3][0] - ViewProj.M[1][0];
+    planes[3].Normal.y = ViewProj.M[3][1] - ViewProj.M[1][1];
+    planes[3].Normal.z = ViewProj.M[3][2] - ViewProj.M[1][2];
+    planes[3].D = ViewProj.M[3][3] - ViewProj.M[1][3];
+
+    // Near Plane: row4 + row3
+    planes[4].Normal.x = ViewProj.M[3][0] + ViewProj.M[2][0];
+    planes[4].Normal.y = ViewProj.M[3][1] + ViewProj.M[2][1];
+    planes[4].Normal.z = ViewProj.M[3][2] + ViewProj.M[2][2];
+    planes[4].D = ViewProj.M[3][3] + ViewProj.M[2][3];
+
+    // Far Plane: row4 - row3
+    planes[5].Normal.x = ViewProj.M[3][0] - ViewProj.M[2][0];
+    planes[5].Normal.y = ViewProj.M[3][1] - ViewProj.M[2][1];
+    planes[5].Normal.z = ViewProj.M[3][2] - ViewProj.M[2][2];
+    planes[5].D = ViewProj.M[3][3] - ViewProj.M[2][3];
+    */
+
+    /*
+    // by minseokbae
+    // Left Plane: row4 + row1
+    // 4-2
+    planes[0].Normal.x = ViewProj.M[3][0] + ViewProj.M[1][0];
+    planes[0].Normal.y = ViewProj.M[3][1] + ViewProj.M[1][1];
+    planes[0].Normal.z = ViewProj.M[3][2] + ViewProj.M[1][2];
+    planes[0].D = ViewProj.M[3][3] - ViewProj.M[1][3];
+
+    // Right Plane: row4 - row1
+    // 4+2
+    planes[1].Normal.x = ViewProj.M[3][0] - ViewProj.M[1][0];
+    planes[1].Normal.y = ViewProj.M[3][1] - ViewProj.M[1][1];
+    planes[1].Normal.z = ViewProj.M[3][2] - ViewProj.M[1][2];
+    planes[1].D = ViewProj.M[3][3] + ViewProj.M[1][3];
+
+    // Bottom Plane: row4 + row2
+    // 4-3
+    planes[2].Normal.x = ViewProj.M[3][0] + ViewProj.M[2][0];
+    planes[2].Normal.y = ViewProj.M[3][1] + ViewProj.M[2][1];
+    planes[2].Normal.z = ViewProj.M[3][2] + ViewProj.M[2][2];
+    planes[2].D = ViewProj.M[3][3] - ViewProj.M[2][3];
+
+    // Top Plane: row4 - row2
+    // 4+3
+    planes[3].Normal.x = ViewProj.M[3][0] - ViewProj.M[2][0];
+    planes[3].Normal.y = ViewProj.M[3][1] - ViewProj.M[2][1];
+    planes[3].Normal.z = ViewProj.M[3][2] - ViewProj.M[2][2];
+    planes[3].D = ViewProj.M[3][3] + ViewProj.M[2][3];
+
+    // Near Plane: row4 + row3
+    planes[4].Normal.x = ViewProj.M[3][0] - ViewProj.M[0][0];
+    planes[4].Normal.y = ViewProj.M[3][1] - ViewProj.M[0][1];
+    planes[4].Normal.z = ViewProj.M[3][2] - ViewProj.M[0][2];
+    planes[4].D = ViewProj.M[3][3] - ViewProj.M[0][3];
+
+    // Far Plane: row4 - row3
+    planes[5].Normal.x = ViewProj.M[3][0] + ViewProj.M[0][0];
+    planes[5].Normal.y = ViewProj.M[3][1] + ViewProj.M[0][1];
+    planes[5].Normal.z = ViewProj.M[3][2] + ViewProj.M[0][2];
+    planes[5].D = ViewProj.M[3][3] + ViewProj.M[0][3];
+    */
+
+    // normalize
+    for (int i = 0; i < 6; i++)
+    {
+        float length = std::sqrt(
+            planes[i].Normal.x * planes[i].Normal.x +
+            planes[i].Normal.y * planes[i].Normal.y +
+            planes[i].Normal.z * planes[i].Normal.z
+        );
+        if (length != 0.0f) 
+        {
+            planes[i].Normal = FVector(
+                planes[i].Normal.x / length, 
+                planes[i].Normal.y / length, 
+                planes[i].Normal.z / length
+            );
+            planes[i].Distance /= length;
+        }
+    }
+
+    return planes;
+}
+
+FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, const FVector& center, const FMatrix& model)
+{
+    FVector localVertices[8] = {
+         { localAABB.min.x, localAABB.min.y, localAABB.min.z },
+         { localAABB.max.x, localAABB.min.y, localAABB.min.z },
+         { localAABB.min.x, localAABB.max.y, localAABB.min.z },
+         { localAABB.max.x, localAABB.max.y, localAABB.min.z },
+         { localAABB.min.x, localAABB.min.y, localAABB.max.z },
+         { localAABB.max.x, localAABB.min.y, localAABB.max.z },
+         { localAABB.min.x, localAABB.max.y, localAABB.max.z },
+         { localAABB.max.x, localAABB.max.y, localAABB.max.z }
+    };
+
+    FVector worldVertices[8];
+    worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], model);
+
+    FVector min = worldVertices[0], max = worldVertices[0];
+
+    // 첫 번째 값을 제외한 나머지 버텍스를 변환하고 min/max 계산
+    for (int i = 1; i < 8; ++i)
+    {
+        worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
+
+        min.x = (worldVertices[i].x < min.x) ? worldVertices[i].x : min.x;
+        min.y = (worldVertices[i].y < min.y) ? worldVertices[i].y : min.y;
+        min.z = (worldVertices[i].z < min.z) ? worldVertices[i].z : min.z;
+
+        max.x = (worldVertices[i].x > max.x) ? worldVertices[i].x : max.x;
+        max.y = (worldVertices[i].y > max.y) ? worldVertices[i].y : max.y;
+        max.z = (worldVertices[i].z > max.z) ? worldVertices[i].z : max.z;
+    }
+    FBoundingBox BoundingBox;
+    BoundingBox.min = min;
+    BoundingBox.max = max;
+    return FBoundingBox(BoundingBox);
+}
+
+bool FRenderer::IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes)
+{
+    for (int i = 0; i < 6; i++) {
+        FVector positive;
+        positive.x = (planes[i].Normal.x >= 0) ? box.max.x : box.min.x;
+        positive.y = (planes[i].Normal.y >= 0) ? box.max.y : box.min.y;
+        positive.z = (planes[i].Normal.z >= 0) ? box.max.z : box.min.z;
+
+        float distance = planes[i].Normal.Dot(positive) + planes[i].Distance;
+        // 해당 평면 밖에 있으면 컬링 처리
+        if (distance < 0)
+            return false; 
+    }
+    return true;
+}
+
+bool FRenderer::CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, const FBoundingBox& worldBox)
+{
+    auto planes = ExtractFrustumPlanes(ActiveViewport);
+    return IsBoxInsideFrustum(worldBox, planes);
 }
 
 void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
