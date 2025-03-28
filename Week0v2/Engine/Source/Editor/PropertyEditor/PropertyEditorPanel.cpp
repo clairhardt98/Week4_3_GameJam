@@ -195,7 +195,7 @@ void PropertyEditorPanel::Render()
 
     // TODO: 추후에 RTTI를 이용해서 프로퍼티 출력하기
     if (PickedActor)
-    if (UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(PickedActor->GetRootComponent()))
+    if (StaticMeshComp* StaticMeshComponent = Cast<StaticMeshComp>(PickedActor->GetRootComponent()))
     {
         RenderForStaticMesh(StaticMeshComponent);
         RenderForMaterial(StaticMeshComponent);
@@ -258,7 +258,7 @@ void PropertyEditorPanel::HSVToRGB(float h, float s, float v, float& r, float& g
     r += m;  g += m;  b += m;
 }
 
-void PropertyEditorPanel::RenderForStaticMesh(UStaticMeshComponent* StaticMeshComp)
+void PropertyEditorPanel::RenderForStaticMesh(StaticMeshComp* StaticMeshComp)
 {
     if (StaticMeshComp->GetStaticMesh() == nullptr)
     {
@@ -292,7 +292,7 @@ void PropertyEditorPanel::RenderForStaticMesh(UStaticMeshComponent* StaticMeshCo
 }
 
 
-void PropertyEditorPanel::RenderForMaterial(UStaticMeshComponent* StaticMeshComp)
+void PropertyEditorPanel::RenderForMaterial(StaticMeshComp* StaticMeshComp)
 {
     if (StaticMeshComp->GetStaticMesh() == nullptr)
     {

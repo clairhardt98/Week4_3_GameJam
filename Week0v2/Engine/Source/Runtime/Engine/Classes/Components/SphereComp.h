@@ -2,9 +2,9 @@
 #include "StaticMeshComponent.h"
 
 
-class USphereComp : public UStaticMeshComponent
+class USphereComp : public StaticMeshComp
 {
-    DECLARE_CLASS(USphereComp, UStaticMeshComponent)
+    DECLARE_CLASS(USphereComp, StaticMeshComp)
 
 public:
     USphereComp();

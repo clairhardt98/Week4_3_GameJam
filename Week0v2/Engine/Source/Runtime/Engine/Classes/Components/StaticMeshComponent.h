@@ -2,12 +2,12 @@
 #include "Components/MeshComponent.h"
 #include "Mesh/StaticMesh.h"
 
-class UStaticMeshComponent : public UMeshComponent
+class StaticMeshComp : public UMeshComponent
 {
-    DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
+    DECLARE_CLASS(StaticMeshComp, UMeshComponent)
 
 public:
-    UStaticMeshComponent() = default;
+    StaticMeshComp() = default;
 
     PROPERTY(int, selectedSubMeshIndex);
 

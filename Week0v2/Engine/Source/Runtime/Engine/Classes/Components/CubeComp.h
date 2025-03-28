@@ -1,9 +1,9 @@
 #pragma once
 #include "StaticMeshComponent.h"
 
-class UCubeComp : public UStaticMeshComponent
+class UCubeComp : public StaticMeshComp
 {
-    DECLARE_CLASS(UCubeComp, UStaticMeshComponent)
+    DECLARE_CLASS(UCubeComp, StaticMeshComp)
 
 public:
     UCubeComp();

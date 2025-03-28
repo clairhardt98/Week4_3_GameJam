@@ -7,7 +7,7 @@ struct SceneData {
     int32 Version;
     int32 NextUUID;
     TMap<int32, UObject*> Primitives;
-    TMap<int32, UObject*> Cameras;
+    UObject* Camera = nullptr;
 };
 class FSceneMgr
 {

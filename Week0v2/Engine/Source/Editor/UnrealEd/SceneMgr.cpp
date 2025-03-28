@@ -11,6 +11,7 @@
 #include "Components/SkySphereComponent.h"
 #include "Camera/CameraComponent.h"
 #include "UObject/Casts.h"
+#include <Engine/FLoaderOBJ.h>
 
 using json = nlohmann::json;
 
@@ -22,7 +23,7 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
         json j = json::parse(*jsonStr);
 
         // 버전과 NextUUID 읽기
-        sceneData.Version = j["Version"].get<int>();
+        //sceneData.Version = j["Version"].get<int>();
         sceneData.NextUUID = j["NextUUID"].get<int>();
 
         // Primitives 처리 (C++14 스타일)
@@ -34,36 +35,22 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
             if (value.contains("Type"))
             {
                 const FString TypeName = value["Type"].get<std::string>();
-                if (TypeName == USphereComp::StaticClass()->GetName())
+
+                if (TypeName == StaticMeshComp::StaticClass()->GetName())
                 {
-                    obj = FObjectFactory::ConstructObject<USphereComp>();
-                }
-                else if (TypeName == UCubeComp::StaticClass()->GetName())
-                {
-                    obj = FObjectFactory::ConstructObject<UCubeComp>();
-                }
-                else if (TypeName == UGizmoArrowComponent::StaticClass()->GetName())
-                {
-                    obj = FObjectFactory::ConstructObject<UGizmoArrowComponent>();
-                }
-                else if (TypeName == UBillboardComponent::StaticClass()->GetName())
-                {
-                    obj = FObjectFactory::ConstructObject<UBillboardComponent>();
-                }
-                else if (TypeName == ULightComponentBase::StaticClass()->GetName())
-                {
-                    obj = FObjectFactory::ConstructObject<ULightComponentBase>();
-                }
-                else if (TypeName == USkySphereComponent::StaticClass()->GetName())
-                {
-                    obj = FObjectFactory::ConstructObject<USkySphereComponent>();
-                    USkySphereComponent* skySphere = static_cast<USkySphereComponent*>(obj);
+                    obj = FObjectFactory::ConstructObject<StaticMeshComp>();
+                    if (value.contains("ObjStaticMeshAsset"))
+                    {
+                        FString MeshAssetPath = value["ObjStaticMeshAsset"].get<std::string>();
+                        StaticMeshComp* staticMeshComp = static_cast<StaticMeshComp*>(obj);
+                        UStaticMesh* Mesh = FManagerOBJ::CreateStaticMesh(MeshAssetPath);
+                        staticMeshComp->SetStaticMesh(Mesh);
+                    }
                 }
             }
 
             USceneComponent* sceneComp = static_cast<USceneComponent*>(obj);
-            //Todo : 여기다가 Obj Maeh저장후 일기
-            //if (value.contains("ObjStaticMeshAsset"))
+            
             if (value.contains("Location")) sceneComp->SetLocation(FVector(value["Location"].get<std::vector<float>>()[0],
                 value["Location"].get<std::vector<float>>()[1],
                 value["Location"].get<std::vector<float>>()[2]));
@@ -88,7 +75,6 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
 
         auto perspectiveCamera = j["PerspectiveCamera"];
         for (auto it = perspectiveCamera.begin(); it != perspectiveCamera.end(); ++it) {
-            int id = std::stoi(it.key());  // Key는 문자열, 숫자로 변환
             const json& value = it.value();
             UObject* obj = FObjectFactory::ConstructObject<UCameraComponent>();
             UCameraComponent* camera = static_cast<UCameraComponent*>(obj);
@@ -104,9 +90,7 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
             if (value.contains("FOV")) camera->SetFOV(value["FOV"].get<float>());
             if (value.contains("NearClip")) camera->SetNearClip(value["NearClip"].get<float>());
             if (value.contains("FarClip")) camera->SetNearClip(value["FarClip"].get<float>());
-            
-            
-            sceneData.Cameras[id] = camera;
+            sceneData.Camera = obj;
         }
     }
     catch (const std::exception& e) {
@@ -170,24 +154,24 @@ std::string FSceneMgr::SerializeSceneData(const SceneData& sceneData)
         };
     }
 
-    for (const auto& [id, camera] : sceneData.Cameras)
-    {
-        UCameraComponent* cameraComponent = static_cast<UCameraComponent*>(camera);
-        TArray<float> Location = { cameraComponent->GetWorldLocation().x, cameraComponent->GetWorldLocation().y, cameraComponent->GetWorldLocation().z };
-        TArray<float> Rotation = { 0.0f, cameraComponent->GetWorldRotation().y, cameraComponent->GetWorldRotation().z };
-        float FOV = cameraComponent->GetFOV();
-        float nearClip = cameraComponent->GetNearClip();
-        float farClip = cameraComponent->GetFarClip();
-    
-        //
-        j["PerspectiveCamera"][std::to_string(id)] = {
-            {"Location", Location},
-            {"Rotation", Rotation},
-            {"FOV", FOV},
-            {"NearClip", nearClip},
-            {"FarClip", farClip}
-        };
-    }
+    //for (const auto& [id, camera] : sceneData.Cameras)
+    //{
+    //    UCameraComponent* cameraComponent = static_cast<UCameraComponent*>(camera);
+    //    TArray<float> Location = { cameraComponent->GetWorldLocation().x, cameraComponent->GetWorldLocation().y, cameraComponent->GetWorldLocation().z };
+    //    TArray<float> Rotation = { 0.0f, cameraComponent->GetWorldRotation().y, cameraComponent->GetWorldRotation().z };
+    //    float FOV = cameraComponent->GetFOV();
+    //    float nearClip = cameraComponent->GetNearClip();
+    //    float farClip = cameraComponent->GetFarClip();
+    //
+    //    //
+    //    j["PerspectiveCamera"][std::to_string(id)] = {
+    //        {"Location", Location},
+    //        {"Rotation", Rotation},
+    //        {"FOV", FOV},
+    //        {"NearClip", nearClip},
+    //        {"FarClip", farClip}
+    //    };
+    //}
 
 
     return j.dump(4); // 4는 들여쓰기 수준

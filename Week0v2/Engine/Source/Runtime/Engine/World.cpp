@@ -8,23 +8,28 @@
 #include "Classes/Components/StaticMeshComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/SkySphereComponent.h"
+#include "Editor/UnrealEd/SceneMgr.h"
 
+
+void UWorld::LoadDefaultScene()
+{
+    // 여기서 json파싱
+    FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10000.scene");
+    SceneData sceneData = FSceneMgr::ParseSceneData(jsonStr);
+
+    CreateBaseObject(sceneData);
+
+}
 
 void UWorld::Initialize()
 {
-    // TODO: Load Scene
-    CreateBaseObject();
-    //SpawnObject(OBJ_CUBE);
-    FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
+    LoadDefaultScene();
+    //FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
 
-    FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
-    AActor* SpawnedActor = SpawnActor<AActor>();
-    USkySphereComponent* skySphere = SpawnedActor->AddComponent<USkySphereComponent>();
-    skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"SkySphere.obj"));
-    skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
+    //FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
 }
 
-void UWorld::CreateBaseObject()
+void UWorld::CreateBaseObject(const SceneData& InSceneData)
 {
     if (EditorPlayer == nullptr)
     {
@@ -33,9 +38,18 @@ void UWorld::CreateBaseObject()
 
     if (camera == nullptr)
     {
-        camera = FObjectFactory::ConstructObject<UCameraComponent>();
-        camera->SetLocation(FVector(8.0f, 8.0f, 8.f));
-        camera->SetRotation(FVector(0.0f, 45.0f, -135.0f));
+        // cameras에서 찾는다
+        if (InSceneData.Camera != nullptr)
+        {
+            camera = static_cast<UCameraComponent*>(InSceneData.Camera);
+        }
+        // 그래도 없으면 생성
+        else 
+        {
+            camera = FObjectFactory::ConstructObject<UCameraComponent>();
+            camera->SetLocation(FVector(8.0f, 8.0f, 8.f));
+            camera->SetRotation(FVector(0.0f, 45.0f, -135.0f));
+        }
     }
 
     if (LocalGizmo == nullptr)
