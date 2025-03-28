@@ -9,7 +9,7 @@ class StatOverlay {
 public:
     bool showFPS = true;
     bool showMemory = false;
-    bool showRender = false;
+    bool showRender = true;
     void ToggleStat(const std::string& command) {
         if (command == "stat fps") {showFPS = true; showRender = true;}
         else if (command == "stat memory") {showMemory = true; showRender = true;}
@@ -26,9 +26,9 @@ public:
             return;
         ImVec2 displaySize = ImGui::GetIO().DisplaySize;
         // 창 크기를 화면의 50%로 설정합니다.
-        ImVec2 windowSize(displaySize.x * 0.5f, displaySize.y * 0.5f);
+        ImVec2 windowSize(displaySize.x * 0.4f, displaySize.y * 0.2f);
         // 창을 중앙에 배치하기 위해 위치를 계산합니다.
-        ImVec2 windowPos((displaySize.x - windowSize.x) * 0.5f, (displaySize.y - windowSize.y) * 0.5f);
+        ImVec2 windowPos((displaySize.x - windowSize.x) * 0.1f, (displaySize.y - windowSize.y) * 0.1f);
 
     
         ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);

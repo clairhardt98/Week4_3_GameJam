@@ -1032,18 +1032,16 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         if (!Comp || !Comp->GetStaticMesh()) continue;
         OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
         if (!RenderData) continue;
+        const FMatrix M = JungleMath::CreateModelMatrix(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
+        FBoundingBox worldBox = TransformBoundingBox(Comp->GetBoundingBox(), Comp->GetWorldLocation(), M);
+        if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
 
         const auto& Materials = Comp->GetStaticMesh()->GetMaterials();
         const auto& Overrides = Comp->GetOverrideMaterials();
-        const FMatrix M = JungleMath::CreateModelMatrix(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
         const FMatrix VP = ActiveViewport->GetVP();
         const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(M));
         //const FVector4 UUIDColor = Comp->EncodeUUID() / 255.0f;
         const bool bSelected = (World->GetSelectedActor() == Comp->GetOwner());
-
-        // 프러스텀 내부에 있는 경우에만 렌더링 처리
-        FBoundingBox worldBox = TransformBoundingBox(Comp->GetBoundingBox(), Comp->GetWorldLocation(), M);
-        if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
 
         for (int SubIdx = 0; SubIdx < RenderData->MaterialSubsets.Num(); ++SubIdx)
         {
