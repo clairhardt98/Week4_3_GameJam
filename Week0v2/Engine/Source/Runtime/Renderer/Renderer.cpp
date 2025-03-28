@@ -101,8 +101,8 @@ void FRenderer::PrepareShader() const
         Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &MaterialConstantBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(2, 1, &LightingBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(3, 1, &FlagBuffer);
+        //Graphics->DeviceContext->PSSetConstantBuffers(2, 1, &LightingBuffer);
+        //Graphics->DeviceContext->PSSetConstantBuffers(3, 1, &FlagBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(4, 1, &SubMeshConstantBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(5, 1, &TextureConstantBufer);
     }
@@ -978,43 +978,43 @@ void FRenderer::PrepareRender()
             if (!Cast<UGizmoBaseComponent>(iter))
                 StaticMeshObjs.Add(pStaticMeshComp);
         }
-        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
-        {
-            GizmoObjs.Add(pGizmoComp);
-        }
-        if (UBillboardComponent* pBillboardComp = Cast<UBillboardComponent>(iter))
-        {
-            BillboardObjs.Add(pBillboardComp);
-        }
-        if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
-        {
-            LightObjs.Add(pLightComp);
-        }
+        //if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
+        //{
+        //    GizmoObjs.Add(pGizmoComp);
+        //}
+        //if (UBillboardComponent* pBillboardComp = Cast<UBillboardComponent>(iter))
+        //{
+        //    BillboardObjs.Add(pBillboardComp);
+        //}
+        //if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
+        //{
+        //    LightObjs.Add(pLightComp);
+        //}
     }
 }
 
 void FRenderer::ClearRenderArr()
 {
     StaticMeshObjs.Empty();
-    GizmoObjs.Empty();
-    BillboardObjs.Empty();
-    LightObjs.Empty();
+    //GizmoObjs.Empty();
+    //BillboardObjs.Empty();
+    //LightObjs.Empty();
 }
 
 void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
-    Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
-    ChangeViewMode(ActiveViewport->GetViewMode());
-    UpdateLightBuffer();
+    //Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
+    //ChangeViewMode(ActiveViewport->GetViewMode());
+    //UpdateLightBuffer();
     UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
 
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
         RenderStaticMeshes(World, ActiveViewport);
-    RenderGizmos(World, ActiveViewport);
-    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
-        RenderBillboards(World, ActiveViewport);
-    RenderLight(World, ActiveViewport);
+    //RenderGizmos(World, ActiveViewport);
+    //if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
+    //    RenderBillboards(World, ActiveViewport);
+    //RenderLight(World, ActiveViewport);
     
     ClearRenderArr();
 }
@@ -1031,12 +1031,11 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
             StaticMeshComp->GetWorldScale()
         );
 
-
-        FBoundingBox worldBox = TransformBoundingBox(StaticMeshComp->GetBoundingBox(), Model);
-        // 프러스텀 내부에 있는 경우에만 렌더링 처리
-
-
-        if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
+        if (!CalculateFrustum(ActiveViewport, StaticMeshComp->AABB))
+        {
+            int a = 0;
+            continue;
+        }
 
         // 최종 MVP 행렬
         FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
@@ -1331,34 +1330,6 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
     }
 
     return planes;
-}
-
-FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localBox, const FMatrix& model)
-{
-    // 바운딩 박스의 8개 코너를 구함
-    FVector corners[8];
-    corners[0] = model * localBox.min;                                              // (min.x, min.y, min.z)
-    corners[1] = model * FVector(localBox.max.x, localBox.min.y, localBox.min.z);   // (max.x, min.y, min.z)
-    corners[2] = model * FVector(localBox.min.x, localBox.max.y, localBox.min.z);   // (min.x, max.y, min.z)
-    corners[3] = model * FVector(localBox.min.x, localBox.min.y, localBox.max.z);   // (min.x, min.y, max.z)
-    corners[4] = model * FVector(localBox.max.x, localBox.max.y, localBox.min.z);   // (max.x, max.y, min.z)
-    corners[5] = model * FVector(localBox.max.x, localBox.min.y, localBox.max.z);   // (max.x, min.y, max.z)
-    corners[6] = model * FVector(localBox.min.x, localBox.max.y, localBox.max.z);   // (min.x, max.y, max.z)
-    corners[7] = model * localBox.max;
-
-    FVector newMin = corners[0];
-    FVector newMax = corners[0];
-
-    for (int i = 1; i < 8; i++) {
-        newMin.x = std::min(newMin.x, corners[i].x);
-        newMin.y = std::min(newMin.y, corners[i].y);
-        newMin.z = std::min(newMin.z, corners[i].z);
-
-        newMax.x = std::max(newMax.x, corners[i].x);
-        newMax.y = std::max(newMax.y, corners[i].y);
-        newMax.z = std::max(newMax.z, corners[i].z);
-    }
-    return FBoundingBox(newMin, newMax);
 }
 
 bool FRenderer::IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes)
