@@ -7,7 +7,7 @@
 enum class LogLevel { Display, Warning, Error };
 class StatOverlay {
 public:
-    bool showFPS = false;
+    bool showFPS = true;
     bool showMemory = false;
     bool showRender = false;
     void ToggleStat(const std::string& command) {

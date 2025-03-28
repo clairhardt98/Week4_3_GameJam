@@ -39,8 +39,7 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
 
                 if (TypeName == StaticMeshComp::StaticClass()->GetName())
                 {
-                    AStaticMeshActor* actor = FObjectFactory::ConstructObject<AStaticMeshActor>();
-                    StaticMeshComp* staticMeshComp = actor->GetStaticMeshComponent();
+                    StaticMeshComp* staticMeshComp = FObjectFactory::ConstructObject<StaticMeshComp>();
 
                     obj = staticMeshComp; // 기존과 동일하게 처리
                     if (value.contains("ObjStaticMeshAsset"))
