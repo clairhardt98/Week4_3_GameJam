@@ -1083,7 +1083,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         {
             UpdateMaterial(*R.Material);
             LastMaterial = R.Material;
-            UE_LOG(LogLevel::Warning, "%d", i);
+            //UE_LOG(LogLevel::Warning, "%d", i);
             i++;
         }
 
@@ -1213,54 +1213,94 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
     FMatrix ProjMatrix = ActiveViewport->GetProjectionMatrix();
     FMatrix ViewProj = ViewMatrix * ProjMatrix;
 
-    FMatrixSIMD simdViewProj(ViewProj);
-    // Left Plane: (M[?][3] + M[?][0])
-    float LeftX = simdViewProj.SumRowValues<0, 3, 0>();
-    float LeftY = simdViewProj.SumRowValues<1, 3, 0>();
-    float LeftZ = simdViewProj.SumRowValues<2, 3, 0>();
-    float LeftD = simdViewProj.SumRowValues<3, 3, 0>();
-    planes[0].Normal = FVector(LeftX, LeftY, LeftZ);
-    planes[0].Distance = LeftD;
+    {
+        FMatrixSIMD simdViewProj(ViewProj);
+        // Left Plane: (M[?][3] + M[?][0])
+        float LeftX = simdViewProj.SumRowValues<0, 3, 0>();
+        float LeftY = simdViewProj.SumRowValues<1, 3, 0>();
+        float LeftZ = simdViewProj.SumRowValues<2, 3, 0>();
+        float LeftD = simdViewProj.SumRowValues<3, 3, 0>();
+        planes[0].Normal = FVector(LeftX, LeftY, LeftZ);
+        planes[0].Distance = LeftD;
+        // Right Plane: (M[?][3] - M[?][0])
+        float RightX = simdViewProj.SubtractRowValues<0, 3, 0>();
+        float RightY = simdViewProj.SubtractRowValues<1, 3, 0>();
+        float RightZ = simdViewProj.SubtractRowValues<2, 3, 0>();
+        float RightD = simdViewProj.SubtractRowValues<3, 3, 0>();
+        planes[1].Normal = FVector(RightX, RightY, RightZ);
+        planes[1].Distance = RightD;
 
-    // Right Plane: (M[?][3] - M[?][0])
-    float RightX = simdViewProj.SubtractRowValues<0, 3, 0>();
-    float RightY = simdViewProj.SubtractRowValues<1, 3, 0>();
-    float RightZ = simdViewProj.SubtractRowValues<2, 3, 0>();
-    float RightD = simdViewProj.SubtractRowValues<3, 3, 0>();
-    planes[1].Normal = FVector(RightX, RightY, RightZ);
-    planes[1].Distance = RightD;
+        // Bottom Plane: (M[?][3] + M[?][1])
+        float BottomX = simdViewProj.SumRowValues<0, 3, 1>();
+        float BottomY = simdViewProj.SumRowValues<1, 3, 1>();
+        float BottomZ = simdViewProj.SumRowValues<2, 3, 1>();
+        float BottomD = simdViewProj.SumRowValues<3, 3, 1>();
+        planes[2].Normal = FVector(BottomX, BottomY, BottomZ);
+        planes[2].Distance = BottomD;
 
-    // Bottom Plane: (M[?][3] + M[?][1])
-    float BottomX = simdViewProj.SumRowValues<0, 3, 1>();
-    float BottomY = simdViewProj.SumRowValues<1, 3, 1>();
-    float BottomZ = simdViewProj.SumRowValues<2, 3, 1>();
-    float BottomD = simdViewProj.SumRowValues<3, 3, 1>();
-    planes[2].Normal = FVector(BottomX, BottomY, BottomZ);
-    planes[2].Distance = BottomD;
+        // Top Plane: (M[?][3] - M[?][1])
+        float TopX = simdViewProj.SubtractRowValues<0, 3, 1>();
+        float TopY = simdViewProj.SubtractRowValues<1, 3, 1>();
+        float TopZ = simdViewProj.SubtractRowValues<2, 3, 1>();
+        float TopD = simdViewProj.SubtractRowValues<3, 3, 1>();
+        planes[3].Normal = FVector(TopX, TopY, TopZ);
+        planes[3].Distance = TopD;
 
-    // Top Plane: (M[?][3] - M[?][1])
-    float TopX = simdViewProj.SubtractRowValues<0, 3, 1>();
-    float TopY = simdViewProj.SubtractRowValues<1, 3, 1>();
-    float TopZ = simdViewProj.SubtractRowValues<2, 3, 1>();
-    float TopD = simdViewProj.SubtractRowValues<3, 3, 1>();
-    planes[3].Normal = FVector(TopX, TopY, TopZ);
-    planes[3].Distance = TopD;
+        // Near Plane: (M[?][3] + M[?][2])
+        float NearX = simdViewProj.SumRowValues<0, 3, 2>();
+        float NearY = simdViewProj.SumRowValues<1, 3, 2>();
+        float NearZ = simdViewProj.SumRowValues<2, 3, 2>();
+        float NearD = simdViewProj.SumRowValues<3, 3, 2>();
+        planes[4].Normal = FVector(NearX, NearY, NearZ);
+        planes[4].Distance = NearD;
 
-    // Near Plane: (M[?][3] + M[?][2])
-    float NearX = simdViewProj.SumRowValues<0, 3, 2>();
-    float NearY = simdViewProj.SumRowValues<1, 3, 2>();
-    float NearZ = simdViewProj.SumRowValues<2, 3, 2>();
-    float NearD = simdViewProj.SumRowValues<3, 3, 2>();
-    planes[4].Normal = FVector(NearX, NearY, NearZ);
-    planes[4].Distance = NearD;
+        // Far Plane: (M[?][3] - M[?][2])
+        float FarX = simdViewProj.SubtractRowValues<0, 3, 2>();
+        float FarY = simdViewProj.SubtractRowValues<1, 3, 2>();
+        float FarZ = simdViewProj.SubtractRowValues<2, 3, 2>();
+        float FarD = simdViewProj.SubtractRowValues<3, 3, 2>();
+        planes[5].Normal = FVector(FarX, FarY, FarZ);
+        planes[5].Distance = FarD;
+    }
 
-    // Far Plane: (M[?][3] - M[?][2])
-    float FarX = simdViewProj.SubtractRowValues<0, 3, 2>();
-    float FarY = simdViewProj.SubtractRowValues<1, 3, 2>();
-    float FarZ = simdViewProj.SubtractRowValues<2, 3, 2>();
-    float FarD = simdViewProj.SubtractRowValues<3, 3, 2>();
-    planes[5].Normal = FVector(FarX, FarY, FarZ);
-    planes[5].Distance = FarD;
+
+    {
+        //// Left Plane: row3 + row0
+        //planes[0].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][0];
+        //planes[0].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][0];
+        //planes[0].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][0];
+        //planes[0].Distance = ViewProj.M[3][3] + ViewProj.M[3][0];
+
+        //// Right Plane: row3 - row0
+        //planes[1].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][0];
+        //planes[1].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][0];
+        //planes[1].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][0];
+        //planes[1].Distance = ViewProj.M[3][3] - ViewProj.M[3][0];
+
+        //// Bottom Plane: row3 + row1
+        //planes[2].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][1];
+        //planes[2].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][1];
+        //planes[2].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][1];
+        //planes[2].Distance = ViewProj.M[3][3] + ViewProj.M[3][1];
+
+        //// Top Plane: row3 - row1
+        //planes[3].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][1];
+        //planes[3].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][1];
+        //planes[3].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][1];
+        //planes[3].Distance = ViewProj.M[3][3] - ViewProj.M[3][1];
+
+        //// Near Plane: row3 + row2
+        //planes[4].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][2];
+        //planes[4].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][2];
+        //planes[4].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][2];
+        //planes[4].Distance = ViewProj.M[3][3] + ViewProj.M[3][2];
+
+        //// Far Plane: row3 - row2
+        //planes[5].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][2];
+        //planes[5].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][2];
+        //planes[5].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][2];
+        //planes[5].Distance = ViewProj.M[3][3] - ViewProj.M[3][2];
+    }
 
 
     // 평면 정규화 (scalar 방식)
@@ -1301,10 +1341,9 @@ FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, cons
 
     FVector worldVertices[8];
     
-    // legacy
     //worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], model);
     FMatrixSIMD simdMatrix(model);
-    worldVertices[0] = simdMatrix.TransformVector(localVertices[0]);
+    worldVertices[0] = center + simdMatrix.TransformVector(localVertices[0]);
 
     FVector min = worldVertices[0], max = worldVertices[0];
 
@@ -1313,6 +1352,7 @@ FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, cons
     {
         worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
 
+        //worldVertices[i] = FMatrix::TransformVector(localVertices[i], model);
         FMatrixSIMD simdMatrix(model);
         worldVertices[i] = simdMatrix.TransformVector(localVertices[i]);
 
