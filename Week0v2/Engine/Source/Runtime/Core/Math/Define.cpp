@@ -189,6 +189,7 @@ FMatrix FMatrix::CreateTranslationMatrix(const FVector& position)
     return translationMatrix;
 }
 
+
 FVector FMatrix::operator*(const FVector& Other) const {
     FVector Result;
     Result.x = M[0][0] * Other.x + M[0][1] * Other.y + M[0][2] * Other.z + M[0][3];
@@ -220,5 +221,3 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
     result.a = v.x * m.M[0][3] + v.y * m.M[1][3] + v.z * m.M[2][3] + v.a * m.M[3][3];
     return result;
 }
-
-

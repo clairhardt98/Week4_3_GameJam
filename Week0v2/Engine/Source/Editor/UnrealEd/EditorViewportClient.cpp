@@ -299,6 +299,10 @@ void FEditorViewportClient::UpdateVP()
     VP = View * Projection;
 }
 
+//void FEditorViewportClient::UpdateVP()
+//{
+//    VP = View * Projection;
+//}
     
 
 bool FEditorViewportClient::IsOrtho() const

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <DirectXMath.h>
 
@@ -40,6 +40,7 @@ struct FVector
     FVector operator-(const FVector& other) const {
         return FVector(x - other.x, y - other.y, z - other.z);
     }
+
     FVector operator+(const FVector& other) const {
         return FVector(x + other.x, y + other.y, z + other.z);
     }
@@ -54,11 +55,17 @@ struct FVector
         return sqrt(x * x + y * y + z * z);
     }
 
+    // 벡터 크기
+    float MagnitudeSquared() const {
+        return x * x + y * y + z * z;
+    }
+
     // 벡터 정규화
     FVector Normalize() const {
         float mag = Magnitude();
         return (mag > 0) ? FVector(x / mag, y / mag, z / mag) : FVector(0, 0, 0);
     }
+
     FVector Cross(const FVector& Other) const
     {
         return FVector{
@@ -67,6 +74,7 @@ struct FVector
             x * Other.y - y * Other.x
         };
     }
+
     // 스칼라 곱셈
     FVector operator*(float scalar) const {
         return FVector(x * scalar, y * scalar, z * scalar);
@@ -80,11 +88,41 @@ struct FVector
         // 두 벡터의 차 벡터의 크기를 계산
         return ((*this - other).Magnitude());
     }
+
     DirectX::XMFLOAT3 ToXMFLOAT3() const
     {
         return DirectX::XMFLOAT3(x, y, z);
     }
 
+    static FVector Min(const FVector& Vec1, const FVector& Vec2)
+    {
+        return (Vec1.MagnitudeSquared() <= Vec2.MagnitudeSquared()) ? Vec1 : Vec2;
+    }
+
+    static FVector Max(const FVector& Vec1, const FVector& Vec2)
+    {
+        return (Vec1.MagnitudeSquared() >= Vec2.MagnitudeSquared()) ? Vec1 : Vec2;
+    }
+
+    // 변경 예정 임시 작성
+    static float GetByIndex(const FVector& Other, int index)
+    {
+        switch (index)
+        {
+        case 0:
+        {
+            return Other.x;
+        }
+        case 1:
+        {
+            return Other.y;
+        }
+        case 2:
+        {
+            return Other.z;
+        }
+        }
+    }
     static const FVector ZeroVector;
     static const FVector OneVector;
     static const FVector UpVector;

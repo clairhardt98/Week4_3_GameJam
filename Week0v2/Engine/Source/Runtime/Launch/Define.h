@@ -10,6 +10,7 @@
 #include "Math/Vector4.h"
 #include "Math/Matrix.h"
 
+//#include "Components/StaticMeshComponent.h"
 
 #define UE_LOG Console::GetInstance().AddLog
 
@@ -250,6 +251,7 @@ struct FBoundingBox
     }
 
 };
+
 struct FCone
 {
     FVector ConeApex; // 원뿔의 꼭짓점

@@ -1027,12 +1027,17 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
     int NumStaticMesh = 0;
 
     TArray<FRenderInstance> RenderQueue;
+    // 이거를 StaticMeshObjs에 대해서 하는게 아니라, 아
     for (StaticMeshComp* Comp : StaticMeshObjs)
     {
         if (!Comp || !Comp->GetStaticMesh()) continue;
         OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
         if (!RenderData) continue;
-        const FMatrix M = JungleMath::CreateModelMatrix(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
+        //const FMatrix M = JungleMath::CreateModelMatrix(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
+        const FMatrix M = JungleMath::CreateModelMatrixSIMD(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
+
+        // TO-DO: refactor
+        // octree나 BVH를 사용하면 여기서 transform할 필요도 없음.
         FBoundingBox worldBox = TransformBoundingBox(Comp->GetBoundingBox(), Comp->GetWorldLocation(), M);
         if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
 
@@ -1208,124 +1213,57 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
     FMatrix ProjMatrix = ActiveViewport->GetProjectionMatrix();
     FMatrix ViewProj = ViewMatrix * ProjMatrix;
 
-    // Left Plane: row3 + row0
-    planes[0].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][0];
-    planes[0].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][0];
-    planes[0].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][0];
-    planes[0].Distance = ViewProj.M[3][3] + ViewProj.M[3][0];
+    FMatrixSIMD simdViewProj(ViewProj);
+    // Left Plane: (M[?][3] + M[?][0])
+    float LeftX = simdViewProj.SumRowValues<0, 3, 0>();
+    float LeftY = simdViewProj.SumRowValues<1, 3, 0>();
+    float LeftZ = simdViewProj.SumRowValues<2, 3, 0>();
+    float LeftD = simdViewProj.SumRowValues<3, 3, 0>();
+    planes[0].Normal = FVector(LeftX, LeftY, LeftZ);
+    planes[0].Distance = LeftD;
 
-    // Right Plane: row3 - row0
-    planes[1].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][0];
-    planes[1].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][0];
-    planes[1].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][0];
-    planes[1].Distance = ViewProj.M[3][3] - ViewProj.M[3][0];
+    // Right Plane: (M[?][3] - M[?][0])
+    float RightX = simdViewProj.SubtractRowValues<0, 3, 0>();
+    float RightY = simdViewProj.SubtractRowValues<1, 3, 0>();
+    float RightZ = simdViewProj.SubtractRowValues<2, 3, 0>();
+    float RightD = simdViewProj.SubtractRowValues<3, 3, 0>();
+    planes[1].Normal = FVector(RightX, RightY, RightZ);
+    planes[1].Distance = RightD;
 
-    // Bottom Plane: row3 + row1
-    planes[2].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][1];
-    planes[2].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][1];
-    planes[2].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][1];
-    planes[2].Distance = ViewProj.M[3][3] + ViewProj.M[3][1];
+    // Bottom Plane: (M[?][3] + M[?][1])
+    float BottomX = simdViewProj.SumRowValues<0, 3, 1>();
+    float BottomY = simdViewProj.SumRowValues<1, 3, 1>();
+    float BottomZ = simdViewProj.SumRowValues<2, 3, 1>();
+    float BottomD = simdViewProj.SumRowValues<3, 3, 1>();
+    planes[2].Normal = FVector(BottomX, BottomY, BottomZ);
+    planes[2].Distance = BottomD;
 
-    // Top Plane: row3 - row1
-    planes[3].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][1];
-    planes[3].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][1];
-    planes[3].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][1];
-    planes[3].Distance = ViewProj.M[3][3] - ViewProj.M[3][1];
+    // Top Plane: (M[?][3] - M[?][1])
+    float TopX = simdViewProj.SubtractRowValues<0, 3, 1>();
+    float TopY = simdViewProj.SubtractRowValues<1, 3, 1>();
+    float TopZ = simdViewProj.SubtractRowValues<2, 3, 1>();
+    float TopD = simdViewProj.SubtractRowValues<3, 3, 1>();
+    planes[3].Normal = FVector(TopX, TopY, TopZ);
+    planes[3].Distance = TopD;
 
-    // Near Plane: row3 + row2
-    planes[4].Normal.x = ViewProj.M[0][3] + ViewProj.M[0][2];
-    planes[4].Normal.y = ViewProj.M[1][3] + ViewProj.M[1][2];
-    planes[4].Normal.z = ViewProj.M[2][3] + ViewProj.M[2][2];
-    planes[4].Distance = ViewProj.M[3][3] + ViewProj.M[3][2];
+    // Near Plane: (M[?][3] + M[?][2])
+    float NearX = simdViewProj.SumRowValues<0, 3, 2>();
+    float NearY = simdViewProj.SumRowValues<1, 3, 2>();
+    float NearZ = simdViewProj.SumRowValues<2, 3, 2>();
+    float NearD = simdViewProj.SumRowValues<3, 3, 2>();
+    planes[4].Normal = FVector(NearX, NearY, NearZ);
+    planes[4].Distance = NearD;
 
-    // Far Plane: row3 - row2
-    planes[5].Normal.x = ViewProj.M[0][3] - ViewProj.M[0][2];
-    planes[5].Normal.y = ViewProj.M[1][3] - ViewProj.M[1][2];
-    planes[5].Normal.z = ViewProj.M[2][3] - ViewProj.M[2][2];
-    planes[5].Distance = ViewProj.M[3][3] - ViewProj.M[3][2];
+    // Far Plane: (M[?][3] - M[?][2])
+    float FarX = simdViewProj.SubtractRowValues<0, 3, 2>();
+    float FarY = simdViewProj.SubtractRowValues<1, 3, 2>();
+    float FarZ = simdViewProj.SubtractRowValues<2, 3, 2>();
+    float FarD = simdViewProj.SubtractRowValues<3, 3, 2>();
+    planes[5].Normal = FVector(FarX, FarY, FarZ);
+    planes[5].Distance = FarD;
 
-    /*
-    // Left Plane: row4 + row1
-    planes[0].Normal.x = ViewProj.M[3][0] + ViewProj.M[0][0];
-    planes[0].Normal.y = ViewProj.M[3][1] + ViewProj.M[0][1];
-    planes[0].Normal.z = ViewProj.M[3][2] + ViewProj.M[0][2];
-    planes[0].D = ViewProj.M[3][3] + ViewProj.M[0][3];
 
-    // Right Plane: row4 - row1
-    planes[1].Normal.x = ViewProj.M[3][0] - ViewProj.M[0][0];
-    planes[1].Normal.y = ViewProj.M[3][1] - ViewProj.M[0][1];
-    planes[1].Normal.z = ViewProj.M[3][2] - ViewProj.M[0][2];
-    planes[1].D = ViewProj.M[3][3] - ViewProj.M[0][3];
-
-    // Bottom Plane: row4 + row2
-    planes[2].Normal.x = ViewProj.M[3][0] + ViewProj.M[1][0];
-    planes[2].Normal.y = ViewProj.M[3][1] + ViewProj.M[1][1];
-    planes[2].Normal.z = ViewProj.M[3][2] + ViewProj.M[1][2];
-    planes[2].D = ViewProj.M[3][3] + ViewProj.M[1][3];
-
-    // Top Plane: row4 - row2
-    planes[3].Normal.x = ViewProj.M[3][0] - ViewProj.M[1][0];
-    planes[3].Normal.y = ViewProj.M[3][1] - ViewProj.M[1][1];
-    planes[3].Normal.z = ViewProj.M[3][2] - ViewProj.M[1][2];
-    planes[3].D = ViewProj.M[3][3] - ViewProj.M[1][3];
-
-    // Near Plane: row4 + row3
-    planes[4].Normal.x = ViewProj.M[3][0] + ViewProj.M[2][0];
-    planes[4].Normal.y = ViewProj.M[3][1] + ViewProj.M[2][1];
-    planes[4].Normal.z = ViewProj.M[3][2] + ViewProj.M[2][2];
-    planes[4].D = ViewProj.M[3][3] + ViewProj.M[2][3];
-
-    // Far Plane: row4 - row3
-    planes[5].Normal.x = ViewProj.M[3][0] - ViewProj.M[2][0];
-    planes[5].Normal.y = ViewProj.M[3][1] - ViewProj.M[2][1];
-    planes[5].Normal.z = ViewProj.M[3][2] - ViewProj.M[2][2];
-    planes[5].D = ViewProj.M[3][3] - ViewProj.M[2][3];
-    */
-
-    /*
-    // by minseokbae
-    // Left Plane: row4 + row1
-    // 4-2
-    planes[0].Normal.x = ViewProj.M[3][0] + ViewProj.M[1][0];
-    planes[0].Normal.y = ViewProj.M[3][1] + ViewProj.M[1][1];
-    planes[0].Normal.z = ViewProj.M[3][2] + ViewProj.M[1][2];
-    planes[0].D = ViewProj.M[3][3] - ViewProj.M[1][3];
-
-    // Right Plane: row4 - row1
-    // 4+2
-    planes[1].Normal.x = ViewProj.M[3][0] - ViewProj.M[1][0];
-    planes[1].Normal.y = ViewProj.M[3][1] - ViewProj.M[1][1];
-    planes[1].Normal.z = ViewProj.M[3][2] - ViewProj.M[1][2];
-    planes[1].D = ViewProj.M[3][3] + ViewProj.M[1][3];
-
-    // Bottom Plane: row4 + row2
-    // 4-3
-    planes[2].Normal.x = ViewProj.M[3][0] + ViewProj.M[2][0];
-    planes[2].Normal.y = ViewProj.M[3][1] + ViewProj.M[2][1];
-    planes[2].Normal.z = ViewProj.M[3][2] + ViewProj.M[2][2];
-    planes[2].D = ViewProj.M[3][3] - ViewProj.M[2][3];
-
-    // Top Plane: row4 - row2
-    // 4+3
-    planes[3].Normal.x = ViewProj.M[3][0] - ViewProj.M[2][0];
-    planes[3].Normal.y = ViewProj.M[3][1] - ViewProj.M[2][1];
-    planes[3].Normal.z = ViewProj.M[3][2] - ViewProj.M[2][2];
-    planes[3].D = ViewProj.M[3][3] + ViewProj.M[2][3];
-
-    // Near Plane: row4 + row3
-    planes[4].Normal.x = ViewProj.M[3][0] - ViewProj.M[0][0];
-    planes[4].Normal.y = ViewProj.M[3][1] - ViewProj.M[0][1];
-    planes[4].Normal.z = ViewProj.M[3][2] - ViewProj.M[0][2];
-    planes[4].D = ViewProj.M[3][3] - ViewProj.M[0][3];
-
-    // Far Plane: row4 - row3
-    planes[5].Normal.x = ViewProj.M[3][0] + ViewProj.M[0][0];
-    planes[5].Normal.y = ViewProj.M[3][1] + ViewProj.M[0][1];
-    planes[5].Normal.z = ViewProj.M[3][2] + ViewProj.M[0][2];
-    planes[5].D = ViewProj.M[3][3] + ViewProj.M[0][3];
-    */
-
-    // normalize
+    // 평면 정규화 (scalar 방식)
     for (int i = 0; i < 6; i++)
     {
         float length = std::sqrt(
@@ -1333,11 +1271,11 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
             planes[i].Normal.y * planes[i].Normal.y +
             planes[i].Normal.z * planes[i].Normal.z
         );
-        if (length != 0.0f) 
+        if (length != 0.0f)
         {
             planes[i].Normal = FVector(
-                planes[i].Normal.x / length, 
-                planes[i].Normal.y / length, 
+                planes[i].Normal.x / length,
+                planes[i].Normal.y / length,
                 planes[i].Normal.z / length
             );
             planes[i].Distance /= length;
@@ -1346,6 +1284,7 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
 
     return planes;
 }
+
 
 FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, const FVector& center, const FMatrix& model)
 {
@@ -1361,7 +1300,11 @@ FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, cons
     };
 
     FVector worldVertices[8];
-    worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], model);
+    
+    // legacy
+    //worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], model);
+    FMatrixSIMD simdMatrix(model);
+    worldVertices[0] = simdMatrix.TransformVector(localVertices[0]);
 
     FVector min = worldVertices[0], max = worldVertices[0];
 
@@ -1369,6 +1312,9 @@ FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, cons
     for (int i = 1; i < 8; ++i)
     {
         worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
+
+        FMatrixSIMD simdMatrix(model);
+        worldVertices[i] = simdMatrix.TransformVector(localVertices[i]);
 
         min.x = (worldVertices[i].x < min.x) ? worldVertices[i].x : min.x;
         min.y = (worldVertices[i].y < min.y) ? worldVertices[i].y : min.y;
