@@ -1406,7 +1406,7 @@ void FRenderer::BuildMergedMeshBuffers(UWorld* World)
         const bool bIsEnd = (i == RenderQueue.Num());
         const FRenderInstance* R = bIsEnd ? nullptr : &RenderQueue[i];
 
-        const bool bShouldFlush = bIsEnd || R->Material != LastMaterial || MergedVertices.Num() >= 50000;
+        const bool bShouldFlush = bIsEnd || R->Material != LastMaterial || MergedVertices.Num() >= 500000;
 
         if (bShouldFlush && MergedVertices.Num() > 0 && MergedIndices.Num() > 0)
         {
