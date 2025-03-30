@@ -14,9 +14,9 @@
 void UWorld::LoadDefaultScene()
 {
     // 여기서 json파싱
-   // FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default.scene");
+    FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_0.scene");
-    FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10000.scene");
+    //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10000.scene");
     SceneData sceneData = FSceneMgr::ParseSceneData(jsonStr);
 
     CreateBaseObject(sceneData);
@@ -27,6 +27,7 @@ void UWorld::Initialize()
 {
     LoadDefaultScene();
     //FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
+    FEngineLoop::renderer.BuildMergedMeshBuffers(this);
 
     //FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
 }
