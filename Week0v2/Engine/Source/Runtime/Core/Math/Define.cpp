@@ -73,61 +73,77 @@ FMatrix FMatrix::Transpose(const FMatrix& Mat) {
 }
 
 // 행렬식 계산 (라플라스 전개, 4x4 행렬)
-float FMatrix::Determinant(const FMatrix& Mat) {
-    float det = 0.0f;
-    for (int32 i = 0; i < 4; i++) {
-        float subMat[3][3];
-        for (int32 j = 1; j < 4; j++) {
-            int32 colIndex = 0;
-            for (int32 k = 0; k < 4; k++) {
-                if (k == i) continue;
-                subMat[j - 1][colIndex] = Mat.M[j][k];
-                colIndex++;
-            }
-        }
-        float minorDet =
-            subMat[0][0] * (subMat[1][1] * subMat[2][2] - subMat[1][2] * subMat[2][1]) -
-            subMat[0][1] * (subMat[1][0] * subMat[2][2] - subMat[1][2] * subMat[2][0]) +
-            subMat[0][2] * (subMat[1][0] * subMat[2][1] - subMat[1][1] * subMat[2][0]);
-        det += (i % 2 == 0 ? 1 : -1) * Mat.M[0][i] * minorDet;
-    }
-    return det;
+float FMatrix::Determinant(const FMatrix& Mat) 
+{
+    //float det = 0.0f;
+    //for (int32 i = 0; i < 4; i++) {
+    //    float subMat[3][3];
+    //    for (int32 j = 1; j < 4; j++) {
+    //        int32 colIndex = 0;
+    //        for (int32 k = 0; k < 4; k++) {
+    //            if (k == i) continue;
+    //            subMat[j - 1][colIndex] = Mat.M[j][k];
+    //            colIndex++;
+    //        }
+    //    }
+    //    float minorDet =
+    //        subMat[0][0] * (subMat[1][1] * subMat[2][2] - subMat[1][2] * subMat[2][1]) -
+    //        subMat[0][1] * (subMat[1][0] * subMat[2][2] - subMat[1][2] * subMat[2][0]) +
+    //        subMat[0][2] * (subMat[1][0] * subMat[2][1] - subMat[1][1] * subMat[2][0]);
+    //    det += (i % 2 == 0 ? 1 : -1) * Mat.M[0][i] * minorDet;
+    //}
+    //return det;
+
+    XMMATRIX m = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(&Mat));
+    XMVECTOR det = XMMatrixDeterminant(m);
+    return XMVectorGetX(det);
 }
 
 // 역행렬 (가우스-조던 소거법)
-FMatrix FMatrix::Inverse(const FMatrix& Mat) {
-    float det = Determinant(Mat);
-    if (fabs(det) < 1e-6) {
+FMatrix FMatrix::Inverse(const FMatrix& Mat) 
+{
+    //float det = Determinant(Mat);
+    //if (fabs(det) < 1e-6) {
+    //    return Identity;
+    //}
+
+    //FMatrix Inv;
+    //float invDet = 1.0f / det;
+
+    //// 여인수 행렬 계산 후 전치하여 역행렬 계산
+    //for (int32 i = 0; i < 4; i++) {
+    //    for (int32 j = 0; j < 4; j++) {
+    //        float subMat[3][3];
+    //        int32 subRow = 0;
+    //        for (int32 r = 0; r < 4; r++) {
+    //            if (r == i) continue;
+    //            int32 subCol = 0;
+    //            for (int32 c = 0; c < 4; c++) {
+    //                if (c == j) continue;
+    //                subMat[subRow][subCol] = Mat.M[r][c];
+    //                subCol++;
+    //            }
+    //            subRow++;
+    //        }
+    //        float minorDet =
+    //            subMat[0][0] * (subMat[1][1] * subMat[2][2] - subMat[1][2] * subMat[2][1]) -
+    //            subMat[0][1] * (subMat[1][0] * subMat[2][2] - subMat[1][2] * subMat[2][0]) +
+    //            subMat[0][2] * (subMat[1][0] * subMat[2][1] - subMat[1][1] * subMat[2][0]);
+
+    //        Inv.M[j][i] = ((i + j) % 2 == 0 ? 1 : -1) * minorDet * invDet;
+    //    }
+    //}
+    //return Inv;
+
+    XMMATRIX m = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(&Mat));
+    XMVECTOR det = XMMatrixDeterminant(m);
+    // 행렬식이 0에 가까우면 단위 행렬을 반환 (또는 에러 처리)
+    if (fabs(XMVectorGetX(det)) < 1e-6f)
         return Identity;
-    }
-
-    FMatrix Inv;
-    float invDet = 1.0f / det;
-
-    // 여인수 행렬 계산 후 전치하여 역행렬 계산
-    for (int32 i = 0; i < 4; i++) {
-        for (int32 j = 0; j < 4; j++) {
-            float subMat[3][3];
-            int32 subRow = 0;
-            for (int32 r = 0; r < 4; r++) {
-                if (r == i) continue;
-                int32 subCol = 0;
-                for (int32 c = 0; c < 4; c++) {
-                    if (c == j) continue;
-                    subMat[subRow][subCol] = Mat.M[r][c];
-                    subCol++;
-                }
-                subRow++;
-            }
-            float minorDet =
-                subMat[0][0] * (subMat[1][1] * subMat[2][2] - subMat[1][2] * subMat[2][1]) -
-                subMat[0][1] * (subMat[1][0] * subMat[2][2] - subMat[1][2] * subMat[2][0]) +
-                subMat[0][2] * (subMat[1][0] * subMat[2][1] - subMat[1][1] * subMat[2][0]);
-
-            Inv.M[j][i] = ((i + j) % 2 == 0 ? 1 : -1) * minorDet * invDet;
-        }
-    }
-    return Inv;
+    XMMATRIX inv = XMMatrixInverse(&det, m);
+    FMatrix result;
+    XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(&result), inv);
+    return result;
 }
 
 FMatrix FMatrix::CreateRotation(float roll, float pitch, float yaw)

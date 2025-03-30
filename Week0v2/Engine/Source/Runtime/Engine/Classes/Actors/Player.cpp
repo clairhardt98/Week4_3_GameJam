@@ -230,7 +230,7 @@ void AEditorPlayer::PickActor(const FVector& pickPosition)
     }
 
     const auto& ActiveViewport = GetEngine().GetLevelEditor()->GetActiveViewportClient();
-    FMatrix inverseMatrix = FMatrix::Inverse(ActiveViewport->GetVP());
+    FMatrix inverseMatrix = FMatrix::Inverse(ActiveViewport->GetViewMatrix());
 
     FVector cameraOrigin = { 0, 0, 0 };
     FVector rayOrigin = inverseMatrix.TransformPosition(cameraOrigin);

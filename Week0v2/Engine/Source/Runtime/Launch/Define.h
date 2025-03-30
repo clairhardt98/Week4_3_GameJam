@@ -10,6 +10,9 @@
 #include "Math/Vector4.h"
 #include "Math/Matrix.h"
 
+#include <DirectXMath.h>
+using namespace DirectX;
+
 //#include "Components/StaticMeshComponent.h"
 
 #define UE_LOG Console::GetInstance().AddLog

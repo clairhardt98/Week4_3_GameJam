@@ -75,9 +75,8 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
             }
             sceneData.Primitives[id] = sceneComp;
         }
-
-        // 여기에서 BVH트리 생성하는거는 무조건 맞는거 같은데?
-        staticMeshBVH = FSceneMgr::BuildStaticMeshBVH(sceneData);
+        //
+            staticMeshBVH = FSceneMgr::BuildStaticMeshBVH(sceneData);
 
         auto perspectiveCamera = j["PerspectiveCamera"];
         for (auto it = perspectiveCamera.begin(); it != perspectiveCamera.end(); ++it) {
