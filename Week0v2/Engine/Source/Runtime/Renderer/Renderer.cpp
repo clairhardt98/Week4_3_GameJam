@@ -1023,24 +1023,26 @@ void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> Act
 void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     PrepareShader();
-    int i = 0;
     int NumStaticMesh = 0;
+    int count = 0;
 
     TArray<FRenderInstance> RenderQueue;
+  
+  
     for (StaticMeshComp* Comp : StaticMeshObjs)
     {
         if (!Comp || !Comp->GetStaticMesh()) continue;
         OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
         if (!RenderData) continue;
-        const FMatrix M = JungleMath::CreateModelMatrix(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
-        FBoundingBox worldBox = TransformBoundingBox(Comp->GetBoundingBox(), Comp->GetWorldLocation(), M);
+
+        const FMatrix M = FMatrix::Identity;
+        FBoundingBox worldBox = TransformBoundingBox(Comp->GetBoundingBox(), FVector(0,0,0), M);
         if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
 
         const auto& Materials = Comp->GetStaticMesh()->GetMaterials();
         const auto& Overrides = Comp->GetOverrideMaterials();
         const FMatrix VP = ActiveViewport->GetVP();
         const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(M));
-        //const FVector4 UUIDColor = Comp->EncodeUUID() / 255.0f;
         const bool bSelected = (World->GetSelectedActor() == Comp->GetOwner());
 
         for (int SubIdx = 0; SubIdx < RenderData->MaterialSubsets.Num(); ++SubIdx)
@@ -1049,47 +1051,85 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
             UMaterial* Mat = Overrides.IsValidIndex(MatIndex) && Overrides[MatIndex] ? Overrides[MatIndex] : Materials[MatIndex]->Material;
             if (!Mat) continue;
 
-            RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, FVector4(0,0,0,0) , bSelected, &Mat->GetMaterialInfo() });
+            RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, FVector4(0,0,0,0), bSelected, &Mat->GetMaterialInfo() });
         }
         ++NumStaticMesh;
     }
-
 
     RenderQueue.Sort([](const FRenderInstance& A, const FRenderInstance& B)
         {
             return A.Material < B.Material;
         });
 
-
+    // 머지 렌더링
+    TArray<FVertexSimple> MergedVertices;
+    TArray<uint32> MergedIndices;
     FObjMaterialInfo* LastMaterial = nullptr;
-    OBJ::FStaticMeshRenderData* LastMesh = nullptr;
+    int VertexOffset = 0;
 
-    for (const auto& R : RenderQueue)
+    int MergedSubmeshCount = 0;
+
+    for (int i = 0; i <= RenderQueue.Num(); ++i)
     {
-        if (R.RenderData != LastMesh)
+        const bool bIsEnd = (i == RenderQueue.Num());
+        const FRenderInstance* R = bIsEnd ? nullptr : &RenderQueue[i];
+
+        const bool bShouldFlush = bIsEnd || R->Material != LastMaterial || MergedSubmeshCount >= 500;
+
+        if (bShouldFlush)
         {
-            UINT offset = 0;
-            Graphics->DeviceContext->IASetVertexBuffers(0, 1, &R.RenderData->VertexBuffer, &Stride, &offset);
-            Graphics->DeviceContext->IASetIndexBuffer(R.RenderData->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-            LastMesh = R.RenderData;
+            if (MergedVertices.Num() > 0 && MergedIndices.Num() > 0)
+            {
+                ID3D11Buffer* VBuffer = CreateVertexBuffer(MergedVertices, MergedVertices.Num() * sizeof(FVertexSimple));
+                ID3D11Buffer* IBuffer = CreateIndexBuffer(MergedIndices, MergedIndices.Num() * sizeof(uint32));
+
+                UpdateMaterial(*LastMaterial);
+
+                UINT offset = 0;
+                Graphics->DeviceContext->IASetVertexBuffers(0, 1, &VBuffer, &Stride, &offset);
+                Graphics->DeviceContext->IASetIndexBuffer(IBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+                Graphics->DeviceContext->DrawIndexed(MergedIndices.Num(), 0, 0);
+                count++;
+
+                ReleaseBuffer(VBuffer);
+                ReleaseBuffer(IBuffer);
+
+                MergedVertices.Empty();
+                MergedIndices.Empty();
+                VertexOffset = 0;
+                MergedSubmeshCount = 0;
+            }
+
+            if (!bIsEnd)
+                LastMaterial = R->Material;
         }
 
-        if (R.Material != LastMaterial)
+        if (!bIsEnd)
         {
-            UpdateMaterial(*R.Material);
-            LastMaterial = R.Material;
-            UE_LOG(LogLevel::Warning, "%d", i);
-            i++;
+            const auto& Subset = R->RenderData->MaterialSubsets[R->SubMeshIndex];
+
+            // 버텍스 추가
+            for (int vi = 0; vi < R->RenderData->Vertices.Num(); ++vi)
+            {
+                MergedVertices.Add(R->RenderData->Vertices[vi]);
+            }
+
+            // 인덱스 추가 (오프셋 필요)
+            for (uint32 j = 0; j < Subset.IndexCount; ++j)
+            {
+                uint32 idx = R->RenderData->Indices[Subset.IndexStart + j];
+                MergedIndices.Add(idx + VertexOffset);
+            }
+
+            VertexOffset += R->RenderData->Vertices.Num();
+            MergedSubmeshCount++;
         }
-
-        UpdateConstant(R.M, R.VP, R.NormalMatrix, R.UUIDColor, R.bSelected);
-
-        const auto& subset = R.RenderData->MaterialSubsets[R.SubMeshIndex];
-        Graphics->DeviceContext->DrawIndexed(subset.IndexCount, subset.IndexStart, 0);
     }
 
-    UE_LOG(LogLevel::Display, "Current StaticMesh: %d", NumStaticMesh);
+    UE_LOG(LogLevel::Display, "Merged StaticMeshes: %d", count);
 }
+
 void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
     if (!World->GetSelectedActor())
@@ -1415,3 +1455,4 @@ void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient
         UPrimitiveBatch::GetInstance().RenderOBB(Light->GetBoundingBox(), Light->GetWorldLocation(), Model);
     }
 }
+

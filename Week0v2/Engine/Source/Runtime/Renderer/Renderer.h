@@ -35,6 +35,8 @@ struct FRenderInstance
     FObjMaterialInfo* Material;
 };
 
+
+
 class FRenderer 
 {
 
@@ -150,6 +152,7 @@ public: // line shader
     void UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateOBBBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FOBB>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateConesBuffer(ID3D11Buffer* pConeBuffer, const TArray<FCone>& Cones, int numCones) const;
+
 
     //Render Pass Demo
     void PrepareRender();

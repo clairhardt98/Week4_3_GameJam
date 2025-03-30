@@ -35,7 +35,7 @@ PS_INPUT mainVS(VS_INPUT input)
     output.materialIndex = input.materialIndex;
     
     // 위치 변환
-    output.position = mul(input.position, mul(M, VP));
+    output.position = mul(input.position,  VP);
     output.color = input.color;
     if (isSelected)
         output.color *= 0.5;
