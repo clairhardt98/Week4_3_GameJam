@@ -96,12 +96,20 @@ struct FVector
 
     static FVector Min(const FVector& Vec1, const FVector& Vec2)
     {
-        return (Vec1.MagnitudeSquared() <= Vec2.MagnitudeSquared()) ? Vec1 : Vec2;
+        return FVector(
+            (Vec1.x > Vec2.x) ? Vec2.x : Vec1.x,
+            (Vec1.y > Vec2.y) ? Vec2.y : Vec1.y,
+            (Vec1.z > Vec2.z) ? Vec2.z : Vec1.z
+        );
     }
 
     static FVector Max(const FVector& Vec1, const FVector& Vec2)
     {
-        return (Vec1.MagnitudeSquared() >= Vec2.MagnitudeSquared()) ? Vec1 : Vec2;
+        return FVector(
+            (Vec1.x > Vec2.x) ? Vec1.x : Vec2.x,
+            (Vec1.y > Vec2.y) ? Vec1.y : Vec2.y,
+            (Vec1.z > Vec2.z) ? Vec1.z : Vec2.z
+        );
     }
 
     // 변경 예정 임시 작성
