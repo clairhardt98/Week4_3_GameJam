@@ -14,6 +14,18 @@ struct FrustumPlane {
     float Distance;
 };
 
+struct FMergedMeshBatch {
+    ID3D11Buffer* VertexBuffer = nullptr;
+    ID3D11Buffer* IndexBuffer = nullptr;
+    int NumIndices = 0;
+    FObjMaterialInfo* Material = nullptr;
+};
+
+
+
+
+
+
 class ULightComponentBase;
 class UWorld;
 class FGraphicsDevice;
@@ -53,6 +65,8 @@ public:
     ID3D11Buffer* MaterialConstantBuffer = nullptr;
     ID3D11Buffer* SubMeshConstantBuffer = nullptr;
     ID3D11Buffer* TextureConstantBufer = nullptr;
+
+    TArray<FMergedMeshBatch> CachedMergedBatches;
 
     FLighting lightingData;
 
@@ -169,6 +183,7 @@ public: // line shader
     bool IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes);
     bool CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, const FBoundingBox& worldBox);
     // ~Frustum culling
+    void BuildMergedMeshBuffers(UWorld* World);
 
 private:
 
