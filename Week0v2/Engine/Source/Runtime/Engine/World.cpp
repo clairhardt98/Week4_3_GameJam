@@ -17,6 +17,7 @@ void UWorld::LoadDefaultScene()
     FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_0.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10000.scene");
+    //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_2.scene");
     SceneData sceneData = FSceneMgr::ParseSceneData(jsonStr);
 
     CreateBaseObject(sceneData);

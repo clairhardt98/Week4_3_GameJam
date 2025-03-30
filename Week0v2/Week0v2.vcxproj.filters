@@ -510,4 +510,8 @@
   <ItemGroup>
     <Natvis Include="Week0v2.natvis" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ConsoleHelper.h" />
+    <ClCompile Include="ConsoleHelper.cpp" />
+  </ItemGroup>
 </Project>

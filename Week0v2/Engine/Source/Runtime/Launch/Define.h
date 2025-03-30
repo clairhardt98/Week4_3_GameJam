@@ -169,7 +169,7 @@ struct FPoint
 struct FBoundingBox
 {
     FBoundingBox(){}
-    FBoundingBox(FVector _min, FVector _max) : min(_min), max(_max) {}
+    FBoundingBox(const FVector& _min, const FVector& _max) : min(_min), max(_max) {}
 	FVector min; // Minimum extents
 	float pad;
 	FVector max; // Maximum extents

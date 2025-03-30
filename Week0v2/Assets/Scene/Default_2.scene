@@ -1,0 +1,64 @@
+{
+  "NextUUID": 50003,
+  "PerspectiveCamera": {
+    "FOV": [
+      60.0
+    ],
+    "FarClip": [
+      100.0
+    ],
+    "Location": [
+      -28.107929,
+      -27.86939,
+      25.837776
+    ],
+    "NearClip": [
+      0.1
+    ],
+    "Rotation": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "Primitives": {
+    "3": {
+      "Location": [
+        -25.0,
+        -25.0,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/bitten_apple_mid.obj",
+      "Rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    },
+    "4": {
+      "Location": [
+        -25.0,
+        -24.0,
+        0.0
+      ],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Type": "StaticMeshComp"
+    }
+  }
+}

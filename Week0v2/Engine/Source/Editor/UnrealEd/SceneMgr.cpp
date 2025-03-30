@@ -16,6 +16,8 @@
 
 using json = nlohmann::json;
 
+FBoundingVolume* FSceneMgr::staticMeshBVH = nullptr;
+
 SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
 {
     SceneData sceneData;
@@ -26,7 +28,7 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
         // 버전과 NextUUID 읽기
         //sceneData.Version = j["Version"].get<int>();
         sceneData.NextUUID = j["NextUUID"].get<int>();
-
+        
         // Primitives 처리 (C++14 스타일)
         auto primitives = j["Primitives"];
         for (auto it = primitives.begin(); it != primitives.end(); ++it) {
@@ -50,7 +52,6 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
                     }
                 }
             }
-
             USceneComponent* sceneComp = static_cast<USceneComponent*>(obj);
             
             if (value.contains("Location")) sceneComp->SetLocation(FVector(value["Location"].get<std::vector<float>>()[0],
@@ -74,6 +75,9 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
             }
             sceneData.Primitives[id] = sceneComp;
         }
+
+        // 여기에서 BVH트리 생성하는거는 무조건 맞는거 같은데?
+        staticMeshBVH = FSceneMgr::BuildStaticMeshBVH(sceneData);
 
         auto perspectiveCamera = j["PerspectiveCamera"];
         for (auto it = perspectiveCamera.begin(); it != perspectiveCamera.end(); ++it) {
@@ -195,3 +199,20 @@ bool FSceneMgr::SaveSceneToFile(const FString& filename, const SceneData& sceneD
     return true;
 }
 
+FBoundingVolume* FSceneMgr::BuildStaticMeshBVH(const SceneData& sceneData)
+{
+    TArray<StaticMeshComp*> meshComponents;
+    // SceneData에 저장된 프리미티브들 중 StaticMeshComp만 골라서 모읍니다.
+    for (auto& pair : sceneData.Primitives)
+    {
+        StaticMeshComp* meshComp = dynamic_cast<StaticMeshComp*>(pair.Value);
+        if (meshComp)
+        {
+            meshComponents.Add(meshComp);
+        }
+    }
+    // BVH 트리의 루트 노드를 생성한 후, BuildBVHTopDown 함수를 호출합니다.
+    FBoundingVolume* rootBVH = new FBoundingVolume();
+    rootBVH = rootBVH->BuildBVHTopDown(meshComponents);
+    return rootBVH;
+}

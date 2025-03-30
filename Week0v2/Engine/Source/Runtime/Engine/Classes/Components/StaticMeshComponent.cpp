@@ -63,9 +63,10 @@ void StaticMeshComp::GetUsedMaterials(TArray<UMaterial*>& Out) const
     }
 }
 
-int StaticMeshComp::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
+int StaticMeshComp::CheckRayIntersection(const FVector& rayOrigin, const FVector& rayDirection, float& pfNearHitDistance)
 {
-    if (!AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance)) return 0;
+    //if (!AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance)) return 0;
+    
     int nIntersections = 0;
     if (staticMesh == nullptr) return 0;
 

@@ -21,6 +21,8 @@
 #include "UObject/UObjectIterator.h"
 #include "Components/SkySphereComponent.h"
 
+#include "Editor/UnrealEd/SceneMgr.h"
+
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
@@ -1038,6 +1040,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
 
         // TO-DO: refactor
         // octree나 BVH를 사용하면 여기서 transform할 필요도 없음.
+        // 이거를 카메라에 따라서 하도록 변경하면 매번 Calculate할 필요 없을 것 같은데.
         FBoundingBox worldBox = TransformBoundingBox(Comp->GetBoundingBox(), Comp->GetWorldLocation(), M);
         if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
 
@@ -1093,7 +1096,8 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         Graphics->DeviceContext->DrawIndexed(subset.IndexCount, subset.IndexStart, 0);
     }
 
-    UE_LOG(LogLevel::Display, "Current StaticMesh: %d", NumStaticMesh);
+    //UE_LOG(LogLevel::Display, "Current StaticMesh: %d", NumStaticMesh);
+
 }
 void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
@@ -1350,11 +1354,10 @@ FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, cons
     // 첫 번째 값을 제외한 나머지 버텍스를 변환하고 min/max 계산
     for (int i = 1; i < 8; ++i)
     {
-        worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
-
+        //worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
         //worldVertices[i] = FMatrix::TransformVector(localVertices[i], model);
         FMatrixSIMD simdMatrix(model);
-        worldVertices[i] = simdMatrix.TransformVector(localVertices[i]);
+        worldVertices[i] = center+simdMatrix.TransformVector(localVertices[i]);
 
         min.x = (worldVertices[i].x < min.x) ? worldVertices[i].x : min.x;
         min.y = (worldVertices[i].y < min.y) ? worldVertices[i].y : min.y;
