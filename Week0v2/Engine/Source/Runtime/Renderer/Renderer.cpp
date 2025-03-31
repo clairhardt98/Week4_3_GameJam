@@ -191,8 +191,7 @@ void FRenderer::RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<F
     if (renderData->IndexBuffer)
         Graphics->DeviceContext->IASetIndexBuffer(renderData->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-    if (renderData->MaterialSubsets.Num() 
-        0)
+    if (renderData->MaterialSubsets.Num())
     {
         // no submesh
         Graphics->DeviceContext->DrawIndexed(renderData->Indices.Num(), 0, 0);
