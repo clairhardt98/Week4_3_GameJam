@@ -23,6 +23,7 @@
 
 #include "Editor/UnrealEd/SceneMgr.h"
 
+
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
@@ -1311,26 +1312,21 @@ FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, cons
     return FBoundingBox(BoundingBox);
 }
 
-bool FRenderer::IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes)
-{
-    for (int i = 0; i < 6; i++) {
-        FVector positive;
-        positive.x = (planes[i].Normal.x >= 0) ? box.max.x : box.min.x;
-        positive.y = (planes[i].Normal.y >= 0) ? box.max.y : box.min.y;
-        positive.z = (planes[i].Normal.z >= 0) ? box.max.z : box.min.z;
-
-        float distance = planes[i].Normal.Dot(positive) + planes[i].Distance;
-        // 해당 평면 밖에 있으면 컬링 처리
-        if (distance < 0)
-            return false; 
-    }
-    return true;
-}
-
+// 여기 인자를 받을 필요 없고, rootbox를 쓰는게 맞는거 같은데
 bool FRenderer::CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, const FBoundingBox& worldBox)
 {
     auto planes = ExtractFrustumPlanes(ActiveViewport);
-    return IsBoxInsideFrustum(worldBox, planes);
+    // BVH를 사용하면 될 듯
+
+    // 테스트 콛,
+    FBoundingVolume* staticMeshBVH = FSceneMgr::GetStaticMeshBVH();
+    if (!staticMeshBVH)
+    {
+        return false;
+    }
+    TArray<StaticMeshComp*> test = staticMeshBVH->GetChunkMeshes(planes);
+
+    return staticMeshBVH->IsBoxInsideFrustum(worldBox, planes);
 }
 
 void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
@@ -1342,6 +1338,7 @@ void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient
         UPrimitiveBatch::GetInstance().RenderOBB(Light->GetBoundingBox(), Light->GetWorldLocation(), Model);
     }
 }
+
 void FRenderer::BuildMergedMeshBuffers(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     CachedMergedBatches.Empty();
@@ -1372,6 +1369,8 @@ void FRenderer::BuildMergedMeshBuffers(UWorld* World, std::shared_ptr<FEditorVie
 
             RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, FVector4(0,0,0,0), bSelected, &Mat->GetMaterialInfo() });
         }
+        // test
+        CalculateFrustum(ActiveViewport, Comp->AABB);
     }
 
     RenderQueue.Sort([](const FRenderInstance& A, const FRenderInstance& B) {
@@ -1423,11 +1422,3 @@ void FRenderer::BuildMergedMeshBuffers(UWorld* World, std::shared_ptr<FEditorVie
 
     UE_LOG(LogLevel::Display, "Built CachedMergedBatches: %d", CachedMergedBatches.Num());
 }
-
-
-
-
-
-
-
-

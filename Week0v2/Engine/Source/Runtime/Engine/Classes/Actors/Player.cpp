@@ -225,7 +225,6 @@ void AEditorPlayer::PickActor(const FVector& pickPosition)
     FBoundingVolume* staticMeshBVH = FSceneMgr::GetStaticMeshBVH();
     if (!staticMeshBVH)
     {
-        // BVH가 아직 생성되지 않았다면, 예외 처리 혹은 기존 로직 사용
         return;
     }
 

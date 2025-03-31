@@ -14,11 +14,11 @@
 void UWorld::LoadDefaultScene()
 {
     // 여기서 json파싱
-    //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default.scene");
+    FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_0.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10000.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_2.scene");
-    FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10.scene");
+    //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10.scene");
     SceneData sceneData = FSceneMgr::ParseSceneData(jsonStr);
 
     CreateBaseObject(sceneData);
