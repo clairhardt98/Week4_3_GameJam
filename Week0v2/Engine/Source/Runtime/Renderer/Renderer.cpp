@@ -452,23 +452,23 @@ void FRenderer::UpdateConstant(const FMatrix& M, const FMatrix& VP, const FMatri
 
 void FRenderer::UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const
 {
-    if (MaterialConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
+    //if (MaterialConstantBuffer)
+    //{
+    //    D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
 
-        Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
-        {
-            FMaterialConstants* constants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
-            constants->DiffuseColor = MaterialInfo.Diffuse;
-            constants->TransparencyScalar = MaterialInfo.TransparencyScalar;
-            constants->AmbientColor = MaterialInfo.Ambient;
-            constants->DensityScalar = MaterialInfo.DensityScalar;
-            constants->SpecularColor = MaterialInfo.Specular;
-            constants->SpecularScalar = MaterialInfo.SpecularScalar;
-            constants->EmmisiveColor = MaterialInfo.Emissive;
-        }
-        Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
-    }
+    //    Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
+    //    {
+    //        FMaterialConstants* constants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
+    //        constants->DiffuseColor = MaterialInfo.Diffuse;
+    //        constants->TransparencyScalar = MaterialInfo.TransparencyScalar;
+    //        constants->AmbientColor = MaterialInfo.Ambient;
+    //        constants->DensityScalar = MaterialInfo.DensityScalar;
+    //        constants->SpecularColor = MaterialInfo.Specular;
+    //        constants->SpecularScalar = MaterialInfo.SpecularScalar;
+    //        constants->EmmisiveColor = MaterialInfo.Emissive;
+    //    }
+    //    Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
+    //}
 
     if (MaterialInfo.bHasTexture == true)
     {
