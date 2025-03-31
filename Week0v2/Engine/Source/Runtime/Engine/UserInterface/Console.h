@@ -65,7 +65,7 @@ public:
                 frameCount = 0;
                 lastTime = currentTime;
             }
-            ImGui::Text("FPS: %.2f", fps);
+            ImGui::Text("FPS: %.2f (%f ms)", fps,1000/fps);
         }
 
         //if (bShowMousePickTime)

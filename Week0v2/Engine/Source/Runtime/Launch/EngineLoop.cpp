@@ -8,6 +8,7 @@
 #include "UnrealClient.h"
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
+#include "Windows/FWindowsPlatformTime.h"
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -214,6 +215,7 @@ void FEngineLoop::Tick()
         }
         while (elapsedTime < targetFrameTime);*/
         // 프레임 제한 해제
+        FScopeCycleCounter Timer(TEXT("FPS"));
     }
 }
 

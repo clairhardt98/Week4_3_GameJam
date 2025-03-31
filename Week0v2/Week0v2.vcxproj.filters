@@ -422,6 +422,7 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\GameFramework\Actor.cpp" />
     <ClInclude Include="BVH.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\FWindowsPlatformTime.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -513,5 +514,6 @@
   <ItemGroup>
     <ClCompile Include="ConsoleHelper.h" />
     <ClCompile Include="ConsoleHelper.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\FWindowsPlatformTime.cpp" />
   </ItemGroup>
 </Project>
