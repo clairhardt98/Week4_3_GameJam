@@ -1027,14 +1027,19 @@ void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> Act
 void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     PrepareShader();
-    int i = 0;
-    for (auto& batch : CachedMergedBatches)
-    {
 
-        if (!batch.IsRenderable())continue;
-        i++;
-        UE_LOG(LogLevel::Display, "%d", i);
-        UpdateMaterial(*batch.Material);
+    FObjMaterialInfo* PrevMaterial = nullptr;
+   // int i = 0;
+    for (const auto& batch : CachedMergedBatches)
+    {
+        if (batch.Material != PrevMaterial)
+        {
+            UpdateMaterial(*batch.Material);
+            PrevMaterial = batch.Material;
+            //UE_LOG(LogLevel::Display,"%d",i);
+           // i = 0;
+        }
+       // i++;
 
         UINT offset = 0;
         Graphics->DeviceContext->IASetVertexBuffers(0, 1, &batch.VertexBuffer, &Stride, &offset);
@@ -1044,6 +1049,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
     }
     i = 0;
 }
+
 
 
 void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)

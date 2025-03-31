@@ -38,7 +38,7 @@ void UWorld::Initialize()
 
     //FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
     GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SubscribeCameraMoveEvent([&]() {
-        UE_LOG(LogLevel::Display, "Camera Move");
+       // UE_LOG(LogLevel::Display, "Camera Move");
         });
 }
 
