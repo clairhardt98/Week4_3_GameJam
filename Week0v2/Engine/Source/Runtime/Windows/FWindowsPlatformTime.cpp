@@ -63,7 +63,7 @@ FScopeCycleCounter::FScopeCycleCounter(FString Id)
 
 FScopeCycleCounter::~FScopeCycleCounter()
 {
-    Finish();
+   // Finish();
 }
 
 uint64_t FScopeCycleCounter::Finish()
