@@ -4,25 +4,37 @@
 #include "PropertyEditor/IWindowToggleable.h"
 #include <windows.h>
 #include <psapi.h>
+
+#include "ConsoleHelper.h"
+//#include "Actors/Player.h"
+
+
 enum class LogLevel { Display, Warning, Error };
 class StatOverlay {
 public:
-    bool showFPS = true;
-    bool showMemory = false;
-    bool showRender = true;
+    bool bShowFPS = true;
+    bool bShowMemory = false;
+    bool bShowRender = true;
+
+    //uint64 LastPickTime = 0;
+    //uint64 TotalPickTime = 0;
+    //uint64 TotalPickCount = 0;
+    //bool bShowMousePickTime = true;
+
     void ToggleStat(const std::string& command) {
-        if (command == "stat fps") {showFPS = true; showRender = true;}
-        else if (command == "stat memory") {showMemory = true; showRender = true;}
+        if (command == "stat fps") {bShowFPS = true; bShowRender = true;}
+        else if (command == "stat memory") {bShowMemory = true; bShowRender = true;}
         else if (command == "stat none") {
-            showFPS = false;
-            showMemory = false;
-            showRender = false;
+            bShowFPS = false;
+            bShowMemory = false;
+            bShowRender = false;
+            //bShowMousePickTime = false;
         }
     }
 
     void Render(ID3D11DeviceContext* context, UINT width, UINT height) {
 
-        if (!showRender)
+        if (!bShowRender)
             return;
         ImVec2 displaySize = ImGui::GetIO().DisplaySize;
         // 창 크기를 화면의 50%로 설정합니다.
@@ -39,7 +51,7 @@ public:
                      ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoMove |
                      ImGuiWindowFlags_NoScrollbar);
-        if (showFPS) {
+        if (bShowFPS) {
             static float lastTime = ImGui::GetTime();
             static int frameCount = 0;
             static float fps = 0.0f;
@@ -56,8 +68,14 @@ public:
             ImGui::Text("FPS: %.2f", fps);
         }
 
+        //if (bShowMousePickTime)
+        //{
+        //    extern double AccumulatedTime;
+        //    ImGui::Text("Accumulated Time: %.4f ms", AccumulatedTime);
 
-        if (showMemory)
+        //}
+
+        if (bShowMemory)
         {
             ImGui::Text("Allocated Object Count: %llu", FPlatformMemory::GetAllocationCount<EAT_Object>());
             ImGui::Text("Allocated Object Memory: %llu B", FPlatformMemory::GetAllocationBytes<EAT_Object>());
@@ -136,8 +154,8 @@ public:
     bool showError = true;     // Error 체크박스
 
     bool bWasOpen = true;
-    bool showFPS = false;
-    bool showMemory = false;
+    bool bShowFPS = false;
+    bool bShowMemory = false;
     // 복사 방지
     Console(const Console&) = delete;
     Console& operator=(const Console&) = delete;

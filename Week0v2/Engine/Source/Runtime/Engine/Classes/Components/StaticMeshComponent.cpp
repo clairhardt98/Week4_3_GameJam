@@ -63,9 +63,17 @@ void StaticMeshComp::GetUsedMaterials(TArray<UMaterial*>& Out) const
     }
 }
 
-int StaticMeshComp::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
+int StaticMeshComp::CheckRayIntersection(const FVector& rayOrigin, const FVector& rayDirection, float& pfNearHitDistance)
 {
-    if (!AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance)) return 0;
+    // 이거 그냥 AABB넣으면 안됄 것 같은데
+    //if (!AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance)) return 0;
+    // 월드 AABB와 레이의 교차 여부 검사
+    if (!FBoundingBox(AABB.min, AABB.max).Intersect(rayOrigin, rayDirection, pfNearHitDistance))
+        return 0;
+
+    // 여기서 Model Space를 사용해서 다시 작업을 해야한다.
+    // 근데 너무 복잡해지니 early-return 부분을 밖으로 빼내거나
+
     int nIntersections = 0;
     if (staticMesh == nullptr) return 0;
 

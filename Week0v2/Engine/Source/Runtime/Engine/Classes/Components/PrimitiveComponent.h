@@ -11,13 +11,12 @@ public:
 
     virtual void InitializeComponent() override;
     virtual void TickComponent(float DeltaTime) override;
-    virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance);
+    virtual int CheckRayIntersection(const FVector& rayOrigin, const FVector& rayDirection, float& pfNearHitDistance);
     bool IntersectRayTriangle(
         const FVector& rayOrigin, const FVector& rayDirection,
         const FVector& v0, const FVector& v1, const FVector& v2, float& hitDistance
     );
     FBoundingBox AABB;
-
 private:
     FString m_Type;
 

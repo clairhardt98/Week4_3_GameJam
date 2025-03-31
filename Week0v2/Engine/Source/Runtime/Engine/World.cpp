@@ -17,6 +17,8 @@ void UWorld::LoadDefaultScene()
     FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_0.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10000.scene");
+    //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_2.scene");
+    //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10.scene");
     SceneData sceneData = FSceneMgr::ParseSceneData(jsonStr);
 
     CreateBaseObject(sceneData);
@@ -27,7 +29,9 @@ void UWorld::Initialize()
 {
     LoadDefaultScene();
     //FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
-    FEngineLoop::renderer.BuildMergedMeshBuffers(this);
+    // 이렇게 하면 안됄 것 같은데
+    FEngineLoop::renderer.BuildMergedMeshBuffers(this, GetEngine().GetLevelEditor()->GetActiveViewportClient());
+    //FEngineLoop::renderer.BuildMergedMeshBuffers(this);
 
     //FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
 }

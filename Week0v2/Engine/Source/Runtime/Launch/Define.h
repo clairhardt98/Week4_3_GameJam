@@ -10,6 +10,10 @@
 #include "Math/Vector4.h"
 #include "Math/Matrix.h"
 
+#include <DirectXMath.h>
+using namespace DirectX;
+
+//#include "Components/StaticMeshComponent.h"
 
 #define UE_LOG Console::GetInstance().AddLog
 
@@ -168,7 +172,7 @@ struct FPoint
 struct FBoundingBox
 {
     FBoundingBox(){}
-    FBoundingBox(FVector _min, FVector _max) : min(_min), max(_max) {}
+    FBoundingBox(const FVector& _min, const FVector& _max) : min(_min), max(_max) {}
 	FVector min; // Minimum extents
 	float pad;
 	FVector max; // Maximum extents
@@ -250,6 +254,7 @@ struct FBoundingBox
     }
 
 };
+
 struct FCone
 {
     FVector ConeApex; // 원뿔의 꼭짓점

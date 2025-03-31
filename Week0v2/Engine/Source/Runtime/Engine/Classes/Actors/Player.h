@@ -2,6 +2,9 @@
 #include "GameFramework/Actor.h"
 #include "UObject/ObjectMacros.h"
 #include "UObject/ObjectTypes.h"
+
+#include "UnrealEd/SceneMgr.h"
+
 class UGizmoBaseComponent;
 class UGizmoArrowComponent;
 class USceneComponent;

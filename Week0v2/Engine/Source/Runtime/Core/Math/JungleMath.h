@@ -7,7 +7,9 @@ class JungleMath
 public:
     static FVector4 ConvertV3ToV4(FVector vec3);
     static FMatrix CreateModelMatrix(FVector translation, FVector rotation, FVector scale);
-    static FMatrix CreateModelMatrix(FVector translation, FQuat rotation, FVector scale);
+    static FMatrix CreateModelMatrixSIMD(FVector translation, FVector rotation, FVector scale);
+
+    //static FMatrix CreateModelMatrix(FVector translation, FQuat rotation, FVector scale);
     static FMatrix CreateViewMatrix(FVector eye, FVector target, FVector up);
     static FMatrix CreateProjectionMatrix(float fov, float aspect, float nearPlane, float farPlane);
     static FMatrix CreateOrthoProjectionMatrix(float width, float height, float nearPlane, float farPlane);

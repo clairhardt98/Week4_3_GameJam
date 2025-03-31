@@ -13,8 +13,6 @@ FVector4 JungleMath::ConvertV3ToV4(FVector vec3)
 	return newVec4;
 }
 
-
-
 FMatrix JungleMath::CreateModelMatrix(FVector translation, FVector rotation, FVector scale)
 {
     FMatrix Translation = FMatrix::CreateTranslationMatrix(translation);
@@ -26,13 +24,25 @@ FMatrix JungleMath::CreateModelMatrix(FVector translation, FVector rotation, FVe
     return Scale * Rotation * Translation;
 }
 
-FMatrix JungleMath::CreateModelMatrix(FVector translation, FQuat rotation, FVector scale)
+FMatrix JungleMath::CreateModelMatrixSIMD(FVector translation, FVector rotation, FVector scale)
 {
+    // 기존의 스칼라 FMatrix 생성 함수들을 이용해 각각의 행렬을 생성
     FMatrix Translation = FMatrix::CreateTranslationMatrix(translation);
-    FMatrix Rotation = rotation.ToMatrix();
+    FMatrix Rotation = FMatrix::CreateRotation(rotation.x, rotation.y, rotation.z);
     FMatrix Scale = FMatrix::CreateScale(scale.x, scale.y, scale.z);
-    return Scale * Rotation * Translation;
+
+    // SIMD로 변환
+    FMatrixSIMD simdScale(Scale);
+    FMatrixSIMD simdRotation(Rotation);
+    FMatrixSIMD simdTranslation(Translation);
+
+    // SIMD 행렬 곱셈 (Scale * Rotation * Translation)
+    FMatrixSIMD simdModel = simdScale * simdRotation * simdTranslation;
+
+    // SIMD 결과를 다시 FMatrix로 변환하여 반환
+    return simdModel.ToFMatrix();
 }
+
 FMatrix JungleMath::CreateViewMatrix(FVector eye, FVector target, FVector up)
 {
     FVector zAxis = (target - eye).Normalize();  // DirectX는 LH이므로 -z가 아니라 +z 사용
