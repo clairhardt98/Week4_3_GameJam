@@ -23,6 +23,7 @@
 #include "BVH.h"
 #include "Editor/UnrealEd/SceneMgr.h"
 
+#include "LevelEditor/SLevelEditor.h"
 
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
@@ -1029,8 +1030,10 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
 
     FObjMaterialInfo* PrevMaterial = nullptr;
    // int i = 0;
-    for (const auto& batch : CachedMergedBatches)
+    for (auto& batch : CachedMergedBatches)
     {
+        if (!batch.IsRenderable()) continue;
+
         if (batch.Material != PrevMaterial)
         {
             UpdateMaterial(*batch.Material);
@@ -1044,6 +1047,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         Graphics->DeviceContext->IASetVertexBuffers(0, 1, &batch.VertexBuffer, &Stride, &offset);
         Graphics->DeviceContext->IASetIndexBuffer(batch.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
         Graphics->DeviceContext->DrawIndexed(batch.NumIndices, 0, 0);
+
     }
 }
 
@@ -1166,7 +1170,6 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
     FMatrix ViewMatrix = ActiveViewport->GetViewMatrix();
     FMatrix ProjMatrix = ActiveViewport->GetProjectionMatrix();
     FMatrix ViewProj = ViewMatrix * ProjMatrix;
-
     {
         FMatrixSIMD simdViewProj(ViewProj);
         // Left Plane: (M[?][3] + M[?][0])
@@ -1216,7 +1219,6 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
         planes[5].Normal = FVector(FarX, FarY, FarZ);
         planes[5].Distance = FarD;
     }
-
 
     {
         //// Left Plane: row3 + row0
@@ -1278,65 +1280,64 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
     return planes;
 }
 
-
-FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, const FVector& center, const FMatrix& model)
-{
-    FVector localVertices[8] = {
-         { localAABB.min.x, localAABB.min.y, localAABB.min.z },
-         { localAABB.max.x, localAABB.min.y, localAABB.min.z },
-         { localAABB.min.x, localAABB.max.y, localAABB.min.z },
-         { localAABB.max.x, localAABB.max.y, localAABB.min.z },
-         { localAABB.min.x, localAABB.min.y, localAABB.max.z },
-         { localAABB.max.x, localAABB.min.y, localAABB.max.z },
-         { localAABB.min.x, localAABB.max.y, localAABB.max.z },
-         { localAABB.max.x, localAABB.max.y, localAABB.max.z }
-    };
-
-    FVector worldVertices[8];
-    
-    worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], model);
-    FMatrixSIMD simdMatrix(model);
-    worldVertices[0] = center + simdMatrix.TransformVector(localVertices[0]);
-    worldVertices[0] = center + simdMatrix.TransformVector(localVertices[0]);
-
-    FVector min = worldVertices[0], max = worldVertices[0];
-
-    for (int i = 1; i < 8; ++i)
-    {
-        worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
-        worldVertices[i] = FMatrix::TransformVector(localVertices[i], model);
-        FMatrixSIMD simdMatrix(model);
-        worldVertices[i] = center+simdMatrix.TransformVector(localVertices[i]);
-
-        min.x = (worldVertices[i].x < min.x) ? worldVertices[i].x : min.x;
-        min.y = (worldVertices[i].y < min.y) ? worldVertices[i].y : min.y;
-        min.z = (worldVertices[i].z < min.z) ? worldVertices[i].z : min.z;
-
-        max.x = (worldVertices[i].x > max.x) ? worldVertices[i].x : max.x;
-        max.y = (worldVertices[i].y > max.y) ? worldVertices[i].y : max.y;
-        max.z = (worldVertices[i].z > max.z) ? worldVertices[i].z : max.z;
-    }
-    FBoundingBox BoundingBox;
-    BoundingBox.min = min;
-    BoundingBox.max = max;
-    return FBoundingBox(BoundingBox);
-}
+//
+//FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, const FVector& center, const FMatrix& model)
+//{
+//    FVector localVertices[8] = {
+//         { localAABB.min.x, localAABB.min.y, localAABB.min.z },
+//         { localAABB.max.x, localAABB.min.y, localAABB.min.z },
+//         { localAABB.min.x, localAABB.max.y, localAABB.min.z },
+//         { localAABB.max.x, localAABB.max.y, localAABB.min.z },
+//         { localAABB.min.x, localAABB.min.y, localAABB.max.z },
+//         { localAABB.max.x, localAABB.min.y, localAABB.max.z },
+//         { localAABB.min.x, localAABB.max.y, localAABB.max.z },
+//         { localAABB.max.x, localAABB.max.y, localAABB.max.z }
+//    };
+//
+//    FVector worldVertices[8];
+//    
+//    worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], model);
+//    FMatrixSIMD simdMatrix(model);
+//    worldVertices[0] = center + simdMatrix.TransformVector(localVertices[0]);
+//    worldVertices[0] = center + simdMatrix.TransformVector(localVertices[0]);
+//
+//    FVector min = worldVertices[0], max = worldVertices[0];
+//
+//    for (int i = 1; i < 8; ++i)
+//    {
+//        worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
+//        worldVertices[i] = FMatrix::TransformVector(localVertices[i], model);
+//        FMatrixSIMD simdMatrix(model);
+//        worldVertices[i] = center+simdMatrix.TransformVector(localVertices[i]);
+//
+//        min.x = (worldVertices[i].x < min.x) ? worldVertices[i].x : min.x;
+//        min.y = (worldVertices[i].y < min.y) ? worldVertices[i].y : min.y;
+//        min.z = (worldVertices[i].z < min.z) ? worldVertices[i].z : min.z;
+//
+//        max.x = (worldVertices[i].x > max.x) ? worldVertices[i].x : max.x;
+//        max.y = (worldVertices[i].y > max.y) ? worldVertices[i].y : max.y;
+//        max.z = (worldVertices[i].z > max.z) ? worldVertices[i].z : max.z;
+//    }
+//    FBoundingBox BoundingBox;
+//    BoundingBox.min = min;
+//    BoundingBox.max = max;
+//    return FBoundingBox(BoundingBox);
+//}
 
 // 여기 인자를 받을 필요 없고, rootbox를 쓰는게 맞는거 같은데
-bool FRenderer::CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, const FBoundingBox& worldBox)
+bool FRenderer::CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, FBoundingVolume* Volume)
 {
     auto planes = ExtractFrustumPlanes(ActiveViewport);
-    // BVH를 사용하면 될 듯
+    return Volume->IsBVHInsideFrustum(planes);
+}
 
-    // 테스트 코드
-    FBoundingVolume* staticMeshBVH = FSceneMgr::GetStaticMeshBVH();
-    if (!staticMeshBVH)
-    {
-        return false;
-    }
-    TArray<StaticMeshComp*> test = staticMeshBVH->GetChunkMeshes(planes);
+void FRenderer::UpdateFrustumCull()
+{
+    FBoundingVolume* root = FSceneMgr::GetStaticMeshBVH();
+    std::shared_ptr<FEditorViewportClient> CurrentViewport = GEngineLoop.GetLevelEditor()->GetActiveViewportClient();
 
-    return staticMeshBVH->IsBoxInsideFrustum(worldBox, planes);
+    CalculateFrustum(CurrentViewport, root);
+    //UE_LOG(LogLevel::Display, "Camera Move", );
 }
 
 void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
@@ -1379,8 +1380,8 @@ void FRenderer::BuildMergedMeshBuffers(UWorld* World, std::shared_ptr<FEditorVie
 
             RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, FVector4(0,0,0,0), bSelected, &Mat->GetMaterialInfo() });
         }
-        // test
-        CalculateFrustum(ActiveViewport, Comp->AABB);
+        //// test
+        //CalculateFrustum(ActiveViewport, Comp->AABB);
     }
 
     RenderQueue.Sort([](const FRenderInstance& A, const FRenderInstance& B) {
@@ -1530,4 +1531,9 @@ void FRenderer::BuildMergedMeshBuffersInternal(FBoundingVolume* BoundingVolume, 
 
     BuildMergedMeshBuffersInternal(BoundingVolume->Left, BatchSize);
     BuildMergedMeshBuffersInternal(BoundingVolume->Right, BatchSize);
+}
+
+bool FMergedMeshBatch::IsRenderable()
+{
+    return BVHNode && BVHNode->bIsRenderable;
 }

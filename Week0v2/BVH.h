@@ -8,7 +8,8 @@ struct FBoundingVolume
     FBoundingVolume() :
         MinBound(FLT_MAX, FLT_MAX, FLT_MAX),
         MaxBound(-FLT_MAX, -FLT_MAX, -FLT_MAX),
-        Left(nullptr), Right(nullptr)
+        Left(nullptr), Right(nullptr),
+        bIsRenderable(false)
     {
     }
     bool IsLeaf() const { return Left == nullptr && Right == nullptr; }
@@ -136,19 +137,20 @@ struct FBoundingVolume
         box.min = MinBound;
         box.max = MaxBound;
 
+        if (!IsLeaf())
+        {
+            bool leftInside = Left->IsBVHInsideFrustum(planes);
+            bool rightInside = Right->IsBVHInsideFrustum(planes);
+        }
+
         // 현재 노드의 AABB가 절두체 내부에 있는지 확인
         if (!IsBoxInsideFrustum(box, planes))
+        {
+            bIsRenderable = false;
             return false;
-
-        // 리프 노드이면 내부에 있다고 판단
-        if (IsLeaf())
-            return true;
-
-        // 자식 노드 재귀 호출 (오른쪽은 Right로 수정)
-        bool leftInside = (Left) ? Left->IsBVHInsideFrustum(planes) : false;
-        bool rightInside = (Right) ? Right->IsBVHInsideFrustum(planes) : false;
-
-        return leftInside || rightInside;
+        }
+        bIsRenderable = true;
+        return true;
     }
 
     bool IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes)
@@ -208,5 +210,6 @@ struct FBoundingVolume
     FBoundingVolume* Right;
 
     TArray<StaticMeshComp*> Meshes;
+    bool bIsRenderable;
 };
 

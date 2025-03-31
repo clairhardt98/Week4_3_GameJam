@@ -25,7 +25,6 @@ void UWorld::LoadDefaultScene()
     SceneData sceneData = FSceneMgr::ParseSceneData(jsonStr);
 
     CreateBaseObject(sceneData);
-
 }
 
 void UWorld::Initialize()

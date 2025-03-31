@@ -9,6 +9,7 @@
 #include "Define.h"
 #include "Container/Set.h"
 
+
 struct FrustumPlane {
     FVector Normal;
     float Distance;
@@ -20,8 +21,10 @@ struct FMergedMeshBatch {
     int NumIndices = 0;
     FObjMaterialInfo* Material = nullptr;
     // !TODO : 현재 BVH 상태에 따라 렌더링 여부 결정
-    bool bIsRenderable = true;
+    //bool bIsRenderable = BVHNode->bIsRenderable;
     class FBoundingVolume* BVHNode = nullptr;
+
+    bool IsRenderable();
 };
 
 
@@ -188,7 +191,10 @@ public: // line shader
 
     //bool IsBoxInsideFrustum(const FBoundingBox& box, const TArray<FrustumPlane>& planes);
     //bool IsBoxInsideFrustum(const TArray<FrustumPlane>& planes);
-    bool CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, const FBoundingBox& worldBox);
+    bool CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveViewport, FBoundingVolume* Volume);
+    
+    void UpdateFrustumCull();
+    
     // ~Frustum culling
     //void BuildMergedMeshBuffers(UWorld* World);
     void BuildMergedMeshBuffers(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);

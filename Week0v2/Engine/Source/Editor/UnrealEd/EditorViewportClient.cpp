@@ -8,12 +8,19 @@
 #include "World.h"
 #include "GameFramework/Actor.h"
 
+#include "Renderer/Renderer.h"
+#include "LevelEditor/SLevelEditor.h"
+
 FVector FEditorViewportClient::Pivot = FVector(0.0f, 0.0f, 0.0f);
 float FEditorViewportClient::orthoSize = 10.0f;
 FEditorViewportClient::FEditorViewportClient()
     : Viewport(nullptr), ViewMode(VMI_Lit), ViewportType(LVT_Perspective), ShowFlag(31)
 {
-
+    SubscribeCameraMoveEvent([](){
+        {
+            FEngineLoop::renderer.UpdateFrustumCull();
+        }
+    });
 }
 
 FEditorViewportClient::~FEditorViewportClient()
