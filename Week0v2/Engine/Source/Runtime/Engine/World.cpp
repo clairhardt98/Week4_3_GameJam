@@ -10,15 +10,18 @@
 #include "Components/SkySphereComponent.h"
 #include "Editor/UnrealEd/SceneMgr.h"
 
+#include "EngineLoop.h"
+#include "Editor/UnrealEd/EditorViewportClient.h"
+
 
 void UWorld::LoadDefaultScene()
 {
     // 여기서 json파싱
-    FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default.scene");
+    //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_0.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10000.scene");
     //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_2.scene");
-    //FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10.scene");
+    FString jsonStr = FSceneMgr::LoadSceneFromFile("Assets/Scene/Default_10.scene");
     SceneData sceneData = FSceneMgr::ParseSceneData(jsonStr);
 
     CreateBaseObject(sceneData);
@@ -35,6 +38,9 @@ void UWorld::Initialize()
     //FEngineLoop::renderer.BuildMergedMeshBuffers(this);
 
     //FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
+    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SubscribeCameraMoveEvent([&]() {
+        UE_LOG(LogLevel::Display, "Camera Move");
+        });
 }
 
 void UWorld::CreateBaseObject(const SceneData& InSceneData)

@@ -7,6 +7,7 @@
 #include "ViewportClient.h"
 #include "EngineLoop.h"
 #include "EngineBaseTypes.h"
+#include <functional>
 
 #define MIN_ORTHOZOOM				1.0							/* 2D ortho viewport zoom >= MIN_ORTHOZOOM */
 #define MAX_ORTHOZOOM				1e25	
@@ -175,12 +176,24 @@ public:
 private:
     TMap<FString, FString> ReadIniFile(const FString& filePath);
     void WriteIniFile(const FString& filePath, const TMap<FString, FString>& config);
+
+public:
+
+    using CameraMoveCallback = std::function<void()>;
+    void SubscribeCameraMoveEvent(CameraMoveCallback InCallback)
+    {
+        OnCameraMovedCallbacks.push_back(InCallback);
+    }
+
+private:
+    std::vector<CameraMoveCallback> OnCameraMovedCallbacks;
 	
 public:
     PROPERTY(int32, CameraSpeedSetting)
     PROPERTY(float, GridSize)
     float GetCameraSpeedScalar() const { return CameraSpeedScalar; };
     void SetCameraSpeedScalar(float value);
+
 
 private:
     template <typename T>

@@ -19,6 +19,8 @@ FEditorViewportClient::FEditorViewportClient()
 FEditorViewportClient::~FEditorViewportClient()
 {
     Release();
+    // remove callbacks
+    OnCameraMovedCallbacks.clear();
 }
 
 void FEditorViewportClient::Draw(FViewport* Viewport)
@@ -59,6 +61,7 @@ void FEditorViewportClient::Input()
     if (io.WantCaptureMouse) return;
     if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) // VK_RBUTTON은 마우스 오른쪽 버튼을 나타냄
     {
+        bool isCameraMoved = false;
         ImGui::SetMouseCursor(ImGuiMouseCursor_None);
         if (!bRightMouseDown)
         {
@@ -88,30 +91,45 @@ void FEditorViewportClient::Input()
             }
 
             SetCursorPos(lastMousePos.x, lastMousePos.y);
+            isCameraMoved = true;
         }
         if (GetAsyncKeyState('A') & 0x8000)
         {
             CameraMoveRight(-1.f);
+            isCameraMoved = true;
         }
         if (GetAsyncKeyState('D') & 0x8000)
         {
             CameraMoveRight(1.f);
+            isCameraMoved = true;
         }
         if (GetAsyncKeyState('W') & 0x8000)
         {
             CameraMoveForward(1.f);
+            isCameraMoved = true;
         }
         if (GetAsyncKeyState('S') & 0x8000)
         {
             CameraMoveForward(-1.f);
+            isCameraMoved = true;
         }
         if (GetAsyncKeyState('E') & 0x8000)
         {
             CameraMoveUp(1.f);
+            isCameraMoved = true;
         }
         if (GetAsyncKeyState('Q') & 0x8000)
         {
             CameraMoveUp(-1.f);
+            isCameraMoved = true;
+        }
+
+        if (isCameraMoved)
+        {
+            for (auto& Callback : OnCameraMovedCallbacks)
+            {
+                Callback();
+            }
         }
     }
     else
@@ -132,6 +150,8 @@ void FEditorViewportClient::Input()
             );
         }
     }
+
+    
 }
 void FEditorViewportClient::ResizeViewport(const DXGI_SWAP_CHAIN_DESC& swapchaindesc)
 {
