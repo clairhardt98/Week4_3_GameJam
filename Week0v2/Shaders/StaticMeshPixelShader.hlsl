@@ -112,23 +112,19 @@ PS_OUTPUT mainPS(PS_INPUT input)
     
     float3 texColor = Textures.Sample(Sampler, input.texcoord + UVOffset);
     float3 color;
-    if (texColor.g == 0) // TODO: boolean으로 변경
-        color = saturate(Material.DiffuseColor);
-    else
-    {
-        color = texColor + Material.DiffuseColor;
-    }
+    color = texColor + Material.DiffuseColor;
+    
     
     if (isSelected)
     {
         color += float3(0.2f, 0.2f, 0.0f); // 노란색 틴트로 하이라이트
-        if (IsSelectedSubMesh)
-            color = float3(1, 1, 1);
+        //if (IsSelectedSubMesh)
+           // color = float3(1, 1, 1);
     }
     
     // 발광 색상 추가
 
-    if (IsLit == 1) // 조명이 적용되는 경우
+    /*if (IsLit == 1) // 조명이 적용되는 경우
     {
         if (input.normalFlag > 0.5)
         {
@@ -155,19 +151,19 @@ PS_OUTPUT mainPS(PS_INPUT input)
         color += Material.EmissiveColor;
         output.color = float4(color, Material.TransparencyScalar);
         return output;
-    }
-    else // unlit 상태일 때 PaperTexture 효과 적용
-    {
-        if (input.normalFlag < 0.5)
+    }*/
+    //else // unlit 상태일 때 PaperTexture 효과 적용
+    //{
+        /*if (input.normalFlag < 0.5)
         {
             output.color = float4(color, Material.TransparencyScalar);
             return output;
-        }
+        }*/
         
         output.color = float4(color, 1);
         // 투명도 적용
         output.color.a = Material.TransparencyScalar;
             
         return output;
-    }
+    //}
 }

@@ -13,6 +13,7 @@
 #include "UObject/Casts.h"
 #include "Engine/StaticMeshActor.h"
 #include <Engine/FLoaderOBJ.h>
+#include <Core/Math/JungleMath.h>
 
 using json = nlohmann::json;
 
@@ -45,9 +46,23 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
                     if (value.contains("ObjStaticMeshAsset"))
                     {
                         FString MeshAssetPath = value["ObjStaticMeshAsset"].get<std::string>();
-                        UStaticMesh* Mesh = FManagerOBJ::CreateStaticMesh(MeshAssetPath);
-                        staticMeshComp->SetStaticMesh(Mesh);
+
+                        FVector location = FVector(value["Location"].get<std::vector<float>>()[0],
+                            value["Location"].get<std::vector<float>>()[1],
+                            value["Location"].get<std::vector<float>>()[2]);
+                        FVector rotation = FVector(value["Rotation"].get<std::vector<float>>()[0],
+                            value["Rotation"].get<std::vector<float>>()[1],
+                            value["Rotation"].get<std::vector<float>>()[2]);
+                        FVector scale = FVector(value["Scale"].get<std::vector<float>>()[0],
+                            value["Scale"].get<std::vector<float>>()[1],
+                            value["Scale"].get<std::vector<float>>()[2]);
+
+                        FMatrix worldMatrix = JungleMath::CreateModelMatrix(location, rotation, scale);
+
+                        UStaticMesh* mesh = FManagerOBJ::CreateStaticMesh(MeshAssetPath, worldMatrix);
+                        staticMeshComp->SetStaticMesh(mesh);
                     }
+
                 }
             }
 
