@@ -20,7 +20,7 @@
 #include "PropertyEditor/ShowFlags.h"
 #include "UObject/UObjectIterator.h"
 #include "Components/SkySphereComponent.h"
-
+#include "BVH.h"
 #include "Editor/UnrealEd/SceneMgr.h"
 
 
@@ -1421,4 +1421,103 @@ void FRenderer::BuildMergedMeshBuffers(UWorld* World, std::shared_ptr<FEditorVie
     }
 
     UE_LOG(LogLevel::Display, "Built CachedMergedBatches: %d", CachedMergedBatches.Num());
+}
+
+void FRenderer::BuildMergedMeshBuffers(FBoundingVolume* BoundingVolume, int BatchSize)
+{
+    BuildMergedMeshBuffersInternal(BoundingVolume, BatchSize);
+    //여기서 sort
+    CachedMergedBatches.Sort([](const FMergedMeshBatch& A, const FMergedMeshBatch& B) {
+        return A.Material < B.Material;
+        });
+}
+void FRenderer::BuildMergedMeshBuffersInternal(FBoundingVolume* BoundingVolume, int BatchSize)
+{
+    // BoundingVolume 트리를 순회하면서 BatchSize보다 메시가 적거나 같으면 해당 메시들을 병합
+
+    if (BoundingVolume->Meshes.Num() <= BatchSize)
+    {
+        TArray<FRenderInstance> RenderQueue;
+
+        for (const auto& Comp : BoundingVolume->Meshes)
+        {
+            if (!Comp || !Comp->GetStaticMesh()) continue;
+
+            OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
+            if (!RenderData) continue;
+
+            const auto& Materials = Comp->GetStaticMesh()->GetMaterials();
+            const auto& Overrides = Comp->GetOverrideMaterials();
+
+            const FMatrix M = FMatrix::Identity;
+            const FMatrix VP = FMatrix::Identity;
+            const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(M));
+            const bool bSelected = false;
+
+
+            for (int SubIdx = 0; SubIdx < RenderData->MaterialSubsets.Num(); ++SubIdx)
+            {
+                int MatIndex = RenderData->MaterialSubsets[SubIdx].MaterialIndex;
+                UMaterial* Mat = Overrides.IsValidIndex(MatIndex) && Overrides[MatIndex] ? Overrides[MatIndex] : Materials[MatIndex]->Material;
+                if (!Mat) continue;
+
+                RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, FVector4(0,0,0,0), bSelected, &Mat->GetMaterialInfo() });
+            }
+        }
+
+        // 2. 병합된 메시들을 CachedMergedBatches에 추가
+
+        RenderQueue.Sort([](const FRenderInstance& A, const FRenderInstance& B) {
+            return A.Material < B.Material;
+            });
+
+        TArray<FVertexSimple> MergedVertices;
+        TArray<uint32> MergedIndices;
+        FObjMaterialInfo* LastMaterial = nullptr;
+        int VertexOffset = 0;
+
+        for (int i = 0; i <= RenderQueue.Num(); ++i)
+        {
+            const bool bIsEnd = (i == RenderQueue.Num());
+            const FRenderInstance* R = bIsEnd ? nullptr : &RenderQueue[i];
+
+            const bool bShouldFlush = bIsEnd || R->Material != LastMaterial || MergedVertices.Num() >= 500000;
+
+            if (bShouldFlush && MergedVertices.Num() > 0 && MergedIndices.Num() > 0)
+            {
+                FMergedMeshBatch batch;
+                batch.VertexBuffer = CreateVertexBuffer(MergedVertices, MergedVertices.Num() * sizeof(FVertexSimple));
+                batch.IndexBuffer = CreateIndexBuffer(MergedIndices, MergedIndices.Num() * sizeof(uint32));
+                batch.NumIndices = MergedIndices.Num();
+                batch.Material = LastMaterial;
+                batch.BVHNode = BoundingVolume;
+                CachedMergedBatches.Add(batch);
+
+                MergedVertices.Empty();
+                MergedIndices.Empty();
+                VertexOffset = 0;
+            }
+
+            if (!bIsEnd)
+            {
+                const auto& Subset = R->RenderData->MaterialSubsets[R->SubMeshIndex];
+                for (const auto& V : R->RenderData->Vertices)
+                    MergedVertices.Add(V);
+
+                for (uint32 j = 0; j < Subset.IndexCount; ++j)
+                {
+                    uint32 idx = R->RenderData->Indices[Subset.IndexStart + j];
+                    MergedIndices.Add(idx + VertexOffset);
+                }
+
+                VertexOffset += R->RenderData->Vertices.Num();
+                LastMaterial = R->Material;
+            }
+        }
+        // 3. 재귀하지 않고 리턴
+        return;
+    }
+
+    BuildMergedMeshBuffersInternal(BoundingVolume->Left, BatchSize);
+    BuildMergedMeshBuffersInternal(BoundingVolume->Right, BatchSize);
 }

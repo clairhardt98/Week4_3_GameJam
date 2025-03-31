@@ -19,6 +19,9 @@ struct FMergedMeshBatch {
     ID3D11Buffer* IndexBuffer = nullptr;
     int NumIndices = 0;
     FObjMaterialInfo* Material = nullptr;
+    // !TODO : 현재 BVH 상태에 따라 렌더링 여부 결정
+    bool bIsRenderable = true;
+    class FBoundingVolume* BVHNode = nullptr;
 };
 
 
@@ -189,6 +192,8 @@ public: // line shader
     // ~Frustum culling
     //void BuildMergedMeshBuffers(UWorld* World);
     void BuildMergedMeshBuffers(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void BuildMergedMeshBuffers(class FBoundingVolume* RootBoundingVolume, int BatchSize);
+    void BuildMergedMeshBuffersInternal(class FBoundingVolume* RootBoundingVolume, int BatchSize);
 
 private:
 
