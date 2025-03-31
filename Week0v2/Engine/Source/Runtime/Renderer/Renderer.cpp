@@ -982,10 +982,10 @@ void FRenderer::PrepareRender()
             if (!Cast<UGizmoBaseComponent>(iter))
                 StaticMeshObjs.Add(pStaticMeshComp);
         }
-        //if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
-        //{
-        //    GizmoObjs.Add(pGizmoComp);
-        //}
+        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
+        {
+            GizmoObjs.Add(pGizmoComp);
+        }
         //if (UBillboardComponent* pBillboardComp = Cast<UBillboardComponent>(iter))
         //{
         //    BillboardObjs.Add(pBillboardComp);
@@ -1041,7 +1041,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
 
 void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
-    if (!World->GetSelectedActor())
+    if (!World->GetSelectedComponent())
     {
         return;
     }
