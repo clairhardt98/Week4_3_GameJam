@@ -127,7 +127,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 
     GWorld = new UWorld;
     GWorld->Initialize();
-
+    //FScopeCycleCounter Timer(TEXT("FPS"));
     return 0;
 }
 
@@ -167,6 +167,7 @@ void FEngineLoop::Render()
 
 void FEngineLoop::Tick()
 {
+   
     LARGE_INTEGER frequency;
     const double targetFrameTime = 1000.0 / targetFPS; // 한 프레임의 목표 시간 (밀리초 단위)
 
@@ -177,6 +178,7 @@ void FEngineLoop::Tick()
 
     while (bIsExit == false)
     {
+        FScopeCycleCounter frameTimer(TEXT("FPS"));
         QueryPerformanceCounter(&startTime);
 
         MSG msg;
@@ -215,7 +217,7 @@ void FEngineLoop::Tick()
         }
         while (elapsedTime < targetFrameTime);*/
         // 프레임 제한 해제
-        FScopeCycleCounter Timer(TEXT("FPS"));
+        frameTimer.Finish();
     }
 }
 
