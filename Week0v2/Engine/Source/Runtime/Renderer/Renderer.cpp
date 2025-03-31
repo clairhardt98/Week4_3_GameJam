@@ -191,7 +191,8 @@ void FRenderer::RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<F
     if (renderData->IndexBuffer)
         Graphics->DeviceContext->IASetIndexBuffer(renderData->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-    if (renderData->MaterialSubsets.Num() == 0)
+    if (renderData->MaterialSubsets.Num() 
+        0)
     {
         // no submesh
         Graphics->DeviceContext->DrawIndexed(renderData->Indices.Num(), 0, 0);
@@ -203,7 +204,7 @@ void FRenderer::RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<F
 
         subMeshIndex == selectedSubMeshIndex ? UpdateSubMeshConstant(true) : UpdateSubMeshConstant(false);
 
-        overrideMaterial[materialIndex] != nullptr ? 
+        overrideMaterial[materialIndex] != nullptr ?
             UpdateMaterial(overrideMaterial[materialIndex]->GetMaterialInfo()) : UpdateMaterial(materials[materialIndex]->Material->GetMaterialInfo());
 
         if (renderData->IndexBuffer)
@@ -248,7 +249,7 @@ ID3D11Buffer* FRenderer::CreateVertexBuffer(FVertexSimple* vertices, UINT byteWi
     vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE; // will never be updated 
     vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
-    D3D11_SUBRESOURCE_DATA vertexbufferSRD = {vertices};
+    D3D11_SUBRESOURCE_DATA vertexbufferSRD = { vertices };
 
     ID3D11Buffer* vertexBuffer;
 
@@ -287,7 +288,7 @@ ID3D11Buffer* FRenderer::CreateIndexBuffer(uint32* indices, UINT byteWidth) cons
     indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER; // index buffer�� ����ϰڴ�.
     indexbufferdesc.ByteWidth = byteWidth;               // buffer ũ�� ����
 
-    D3D11_SUBRESOURCE_DATA indexbufferSRD = {indices};
+    D3D11_SUBRESOURCE_DATA indexbufferSRD = { indices };
 
     ID3D11Buffer* indexBuffer;
 
@@ -349,7 +350,7 @@ void FRenderer::CreateConstantBuffer()
 
     constantbufferdesc.ByteWidth = sizeof(FMaterialConstants) + 0xf & 0xfffffff0;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &MaterialConstantBuffer);
-    
+
     constantbufferdesc.ByteWidth = sizeof(FSubMeshConstants) + 0xf & 0xfffffff0;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &SubMeshConstantBuffer);
 
@@ -455,23 +456,23 @@ void FRenderer::UpdateConstant(const FMatrix& M, const FMatrix& VP, const FMatri
 
 void FRenderer::UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const
 {
-    if (MaterialConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
+    //if (MaterialConstantBuffer)
+    //{
+    //    D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
 
-        Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
-        {
-            FMaterialConstants* constants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
-            constants->DiffuseColor = MaterialInfo.Diffuse;
-            constants->TransparencyScalar = MaterialInfo.TransparencyScalar;
-            constants->AmbientColor = MaterialInfo.Ambient;
-            constants->DensityScalar = MaterialInfo.DensityScalar;
-            constants->SpecularColor = MaterialInfo.Specular;
-            constants->SpecularScalar = MaterialInfo.SpecularScalar;
-            constants->EmmisiveColor = MaterialInfo.Emissive;
-        }
-        Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
-    }
+    //    Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
+    //    {
+    //        FMaterialConstants* constants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
+    //        constants->DiffuseColor = MaterialInfo.Diffuse;
+    //        constants->TransparencyScalar = MaterialInfo.TransparencyScalar;
+    //        constants->AmbientColor = MaterialInfo.Ambient;
+    //        constants->DensityScalar = MaterialInfo.DensityScalar;
+    //        constants->SpecularColor = MaterialInfo.Specular;
+    //        constants->SpecularScalar = MaterialInfo.SpecularScalar;
+    //        constants->EmmisiveColor = MaterialInfo.Emissive;
+    //    }
+    //    Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
+    //}
 
     if (MaterialInfo.bHasTexture == true)
     {
@@ -481,8 +482,8 @@ void FRenderer::UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const
     }
     else
     {
-        ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
-        ID3D11SamplerState* nullSampler[1] = {nullptr};
+        ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+        ID3D11SamplerState* nullSampler[1] = { nullptr };
 
         Graphics->DeviceContext->PSSetShaderResources(0, 1, nullSRV);
         Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler);
@@ -705,7 +706,7 @@ ID3D11Buffer* FRenderer::CreateVertexBuffer(FVertexTexture* vertices, UINT byteW
     vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE; // will never be updated 
     vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
-    D3D11_SUBRESOURCE_DATA vertexbufferSRD = {vertices};
+    D3D11_SUBRESOURCE_DATA vertexbufferSRD = { vertices };
 
     ID3D11Buffer* vertexBuffer;
 
@@ -798,7 +799,7 @@ void FRenderer::ReleaseLineShader() const
 
 ID3D11Buffer* FRenderer::CreateStaticVerticesBuffer() const
 {
-    FSimpleVertex vertices[2]{{0}, {0}};
+    FSimpleVertex vertices[2]{ {0}, {0} };
 
     D3D11_BUFFER_DESC vbDesc = {};
     vbDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -1019,7 +1020,7 @@ void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> Act
     //if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
     //    RenderBillboards(World, ActiveViewport);
     //RenderLight(World, ActiveViewport);
-    
+
     ClearRenderArr();
 }
 
@@ -1046,30 +1047,30 @@ void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorV
         return;
     }
 
-    #pragma region GizmoDepth
-        ID3D11DepthStencilState* DepthStateDisable = Graphics->DepthStateDisable;
-        Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
-    #pragma endregion GizmoDepth
+#pragma region GizmoDepth
+    ID3D11DepthStencilState* DepthStateDisable = Graphics->DepthStateDisable;
+    Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
+#pragma endregion GizmoDepth
 
     //  fill solid,  Wirframe 에서도 제대로 렌더링되기 위함
     Graphics->DeviceContext->RSSetState(FEngineLoop::graphicDevice.RasterizerStateSOLID);
-    
+
     for (auto GizmoComp : GizmoObjs)
     {
-        
-        if ((GizmoComp->GetGizmoType()==UGizmoBaseComponent::ArrowX ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::ArrowY ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::ArrowZ)
+
+        if ((GizmoComp->GetGizmoType() == UGizmoBaseComponent::ArrowX ||
+            GizmoComp->GetGizmoType() == UGizmoBaseComponent::ArrowY ||
+            GizmoComp->GetGizmoType() == UGizmoBaseComponent::ArrowZ)
             && World->GetEditorPlayer()->GetControlMode() != CM_TRANSLATION)
             continue;
-        else if ((GizmoComp->GetGizmoType()==UGizmoBaseComponent::ScaleX ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::ScaleY ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::ScaleZ)
+        else if ((GizmoComp->GetGizmoType() == UGizmoBaseComponent::ScaleX ||
+            GizmoComp->GetGizmoType() == UGizmoBaseComponent::ScaleY ||
+            GizmoComp->GetGizmoType() == UGizmoBaseComponent::ScaleZ)
             && World->GetEditorPlayer()->GetControlMode() != CM_SCALE)
             continue;
-        else if ((GizmoComp->GetGizmoType()==UGizmoBaseComponent::CircleX ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::CircleY ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::CircleZ)
+        else if ((GizmoComp->GetGizmoType() == UGizmoBaseComponent::CircleX ||
+            GizmoComp->GetGizmoType() == UGizmoBaseComponent::CircleY ||
+            GizmoComp->GetGizmoType() == UGizmoBaseComponent::CircleZ)
             && World->GetEditorPlayer()->GetControlMode() != CM_ROTATION)
             continue;
         FMatrix Model = JungleMath::CreateModelMatrix(GizmoComp->GetWorldLocation(),
@@ -1083,9 +1084,9 @@ void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorV
         FMatrix VP = ActiveViewport->GetVP();
 
         if (GizmoComp == World->GetPickingGizmo())
-            UpdateConstant(M,VP, NormalMatrix, UUIDColor, true);
+            UpdateConstant(M, VP, NormalMatrix, UUIDColor, true);
         else
-            UpdateConstant(M,VP, NormalMatrix, UUIDColor, false);
+            UpdateConstant(M, VP, NormalMatrix, UUIDColor, false);
 
         if (!GizmoComp->GetStaticMesh()) continue;
 
@@ -1119,9 +1120,9 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
         FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
         FVector4 UUIDColor = BillboardComp->EncodeUUID() / 255.0f;
         if (BillboardComp == World->GetPickingGizmo())
-            UpdateConstant(M,VP, NormalMatrix, UUIDColor, true);
+            UpdateConstant(M, VP, NormalMatrix, UUIDColor, true);
         else
-            UpdateConstant(M,VP, NormalMatrix, UUIDColor, false);
+            UpdateConstant(M, VP, NormalMatrix, UUIDColor, false);
 
         if (UParticleSubUVComp* SubUVParticle = Cast<UParticleSubUVComp>(BillboardComp))
         {
@@ -1318,7 +1319,7 @@ bool FRenderer::CalculateFrustum(std::shared_ptr<FEditorViewportClient> ActiveVi
     auto planes = ExtractFrustumPlanes(ActiveViewport);
     // BVH를 사용하면 될 듯
 
-    // 테스트 콛,
+    // 테스트 코드
     FBoundingVolume* staticMeshBVH = FSceneMgr::GetStaticMeshBVH();
     if (!staticMeshBVH)
     {
@@ -1333,7 +1334,7 @@ void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient
 {
     for (auto Light : LightObjs)
     {
-        FMatrix Model = JungleMath::CreateModelMatrix(Light->GetWorldLocation(), Light->GetWorldRotation(), {1, 1, 1});
+        FMatrix Model = JungleMath::CreateModelMatrix(Light->GetWorldLocation(), Light->GetWorldRotation(), { 1, 1, 1 });
         UPrimitiveBatch::GetInstance().AddCone(Light->GetWorldLocation(), Light->GetRadius(), 15, 140, Light->GetColor(), Model);
         UPrimitiveBatch::GetInstance().RenderOBB(Light->GetBoundingBox(), Light->GetWorldLocation(), Model);
     }
