@@ -91,7 +91,7 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
             sceneData.Primitives[id] = sceneComp;
         }
         //
-            staticMeshBVH = FSceneMgr::BuildStaticMeshBVH(sceneData);
+        staticMeshBVH = FSceneMgr::BuildStaticMeshBVH(sceneData);
 
         auto perspectiveCamera = j["PerspectiveCamera"];
         for (auto it = perspectiveCamera.begin(); it != perspectiveCamera.end(); ++it) {

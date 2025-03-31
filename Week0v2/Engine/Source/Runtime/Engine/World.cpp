@@ -29,7 +29,9 @@ void UWorld::Initialize()
 {
     LoadDefaultScene();
     //FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
-    FEngineLoop::renderer.BuildMergedMeshBuffers(this);
+    // 이렇게 하면 안됄 것 같은데
+    FEngineLoop::renderer.BuildMergedMeshBuffers(this, GetEngine().GetLevelEditor()->GetActiveViewportClient());
+    //FEngineLoop::renderer.BuildMergedMeshBuffers(this);
 
     //FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
 }

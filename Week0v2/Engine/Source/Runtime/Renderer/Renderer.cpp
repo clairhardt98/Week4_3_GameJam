@@ -1027,49 +1027,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
     PrepareShader();
 
     for (const auto& batch : CachedMergedBatches)
-    TArray<FRenderInstance> RenderQueue;
-    // 이거를 StaticMeshObjs에 대해서 하는게 아니라, 아
-    for (StaticMeshComp* Comp : StaticMeshObjs)
     {
-        if (!Comp || !Comp->GetStaticMesh()) continue;
-        OBJ::FStaticMeshRenderData* RenderData = Comp->GetStaticMesh()->GetRenderData();
-        if (!RenderData) continue;
-        //const FMatrix M = JungleMath::CreateModelMatrix(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
-        const FMatrix M = JungleMath::CreateModelMatrixSIMD(Comp->GetWorldLocation(), Comp->GetWorldRotation(), Comp->GetWorldScale());
-
-        // TO-DO: refactor
-        // octree나 BVH를 사용하면 여기서 transform할 필요도 없음.
-        // 이거를 카메라에 따라서 하도록 변경하면 매번 Calculate할 필요 없을 것 같은데.
-        FBoundingBox worldBox = TransformBoundingBox(Comp->GetBoundingBox(), Comp->GetWorldLocation(), M);
-        if (!CalculateFrustum(ActiveViewport, worldBox)) continue;
-
-        const auto& Materials = Comp->GetStaticMesh()->GetMaterials();
-        const auto& Overrides = Comp->GetOverrideMaterials();
-        const FMatrix VP = ActiveViewport->GetVP();
-        const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(M));
-        //const FVector4 UUIDColor = Comp->EncodeUUID() / 255.0f;
-        const bool bSelected = (World->GetSelectedActor() == Comp->GetOwner());
-
-        for (int SubIdx = 0; SubIdx < RenderData->MaterialSubsets.Num(); ++SubIdx)
-        {
-            int MatIndex = RenderData->MaterialSubsets[SubIdx].MaterialIndex;
-            UMaterial* Mat = Overrides.IsValidIndex(MatIndex) && Overrides[MatIndex] ? Overrides[MatIndex] : Materials[MatIndex]->Material;
-            if (!Mat) continue;
-
-            RenderQueue.Add({ RenderData, SubIdx, M, VP, NormalMatrix, FVector4(0,0,0,0) , bSelected, &Mat->GetMaterialInfo() });
-        }
-        ++NumStaticMesh;
-    }
-
-
-    RenderQueue.Sort([](const FRenderInstance& A, const FRenderInstance& B)
-        {
-            return A.Material < B.Material;
-        });
-
-
-    FObjMaterialInfo* LastMaterial = nullptr;
-    OBJ::FStaticMeshRenderData* LastMesh = nullptr;
         UpdateMaterial(*batch.Material);
 
         UINT offset = 0;
@@ -1287,7 +1245,6 @@ TArray<FrustumPlane> FRenderer::ExtractFrustumPlanes(std::shared_ptr<FEditorView
         //planes[5].Distance = ViewProj.M[3][3] - ViewProj.M[3][2];
     }
 
-
     // 평면 정규화 (scalar 방식)
     for (int i = 0; i < 6; i++)
     {
@@ -1326,17 +1283,17 @@ FBoundingBox FRenderer::TransformBoundingBox(const FBoundingBox& localAABB, cons
 
     FVector worldVertices[8];
     
-    //worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], model);
+    worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], model);
     FMatrixSIMD simdMatrix(model);
+    worldVertices[0] = center + simdMatrix.TransformVector(localVertices[0]);
     worldVertices[0] = center + simdMatrix.TransformVector(localVertices[0]);
 
     FVector min = worldVertices[0], max = worldVertices[0];
 
-    // 첫 번째 값을 제외한 나머지 버텍스를 변환하고 min/max 계산
     for (int i = 1; i < 8; ++i)
     {
-        //worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
-        //worldVertices[i] = FMatrix::TransformVector(localVertices[i], model);
+        worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], model);
+        worldVertices[i] = FMatrix::TransformVector(localVertices[i], model);
         FMatrixSIMD simdMatrix(model);
         worldVertices[i] = center+simdMatrix.TransformVector(localVertices[i]);
 
@@ -1385,7 +1342,7 @@ void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient
         UPrimitiveBatch::GetInstance().RenderOBB(Light->GetBoundingBox(), Light->GetWorldLocation(), Model);
     }
 }
-void FRenderer::BuildMergedMeshBuffers(UWorld* World)
+void FRenderer::BuildMergedMeshBuffers(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     CachedMergedBatches.Empty();
 
@@ -1405,6 +1362,7 @@ void FRenderer::BuildMergedMeshBuffers(UWorld* World)
         const FMatrix VP = FMatrix::Identity;
         const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(M));
         const bool bSelected = false;
+
 
         for (int SubIdx = 0; SubIdx < RenderData->MaterialSubsets.Num(); ++SubIdx)
         {

@@ -42,7 +42,8 @@ public:
         return GEngineLoop.GetWorld();
     }
 
-    FEngineLoop& GetEngine()
+    FEngineLoop& 
+        GetEngine()
     {
         return GEngineLoop;
     }

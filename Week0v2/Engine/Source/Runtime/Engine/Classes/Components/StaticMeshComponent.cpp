@@ -67,11 +67,8 @@ int StaticMeshComp::CheckRayIntersection(const FVector& rayOrigin, const FVector
 {
     // 이거 그냥 AABB넣으면 안됄 것 같은데
     //if (!AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance)) return 0;
-    FBoundingBox worldAABB;
-    worldAABB.min = GetWorldLocation() + AABB.min;
-    worldAABB.max = GetWorldLocation() + AABB.max;
     // 월드 AABB와 레이의 교차 여부 검사
-    if (!FBoundingBox(worldAABB.min, worldAABB.max).Intersect(rayOrigin, rayDirection, pfNearHitDistance))
+    if (!FBoundingBox(AABB.min, AABB.max).Intersect(rayOrigin, rayDirection, pfNearHitDistance))
         return 0;
 
     // 여기서 Model Space를 사용해서 다시 작업을 해야한다.
