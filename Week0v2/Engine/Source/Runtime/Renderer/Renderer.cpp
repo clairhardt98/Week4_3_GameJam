@@ -1088,7 +1088,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         Graphics->DeviceContext->DrawIndexed(subset.IndexCount, subset.IndexStart, 0);
     }
 
-    UE_LOG(LogLevel::Display, "Current StaticMesh: %d", NumStaticMesh);
+    //UE_LOG(LogLevel::Display, "Current StaticMesh: %d", NumStaticMesh);
 }
 void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
