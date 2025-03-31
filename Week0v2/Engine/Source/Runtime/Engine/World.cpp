@@ -10,6 +10,9 @@
 #include "Components/SkySphereComponent.h"
 #include "Editor/UnrealEd/SceneMgr.h"
 
+#include "EngineLoop.h"
+#include "Editor/UnrealEd/EditorViewportClient.h"
+
 
 void UWorld::LoadDefaultScene()
 {
@@ -22,7 +25,6 @@ void UWorld::LoadDefaultScene()
     SceneData sceneData = FSceneMgr::ParseSceneData(jsonStr);
 
     CreateBaseObject(sceneData);
-
 }
 
 void UWorld::Initialize()
@@ -35,6 +37,9 @@ void UWorld::Initialize()
     //FEngineLoop::renderer.BuildMergedMeshBuffers(this);
 
     //FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
+    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SubscribeCameraMoveEvent([&]() {
+        UE_LOG(LogLevel::Display, "Camera Move");
+        });
 }
 
 void UWorld::CreateBaseObject(const SceneData& InSceneData)
