@@ -14,7 +14,7 @@
 #include "PropertyEditor/ShowFlags.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UObject/UObjectIterator.h"
-
+#include "Windows/FWindowsPlatformTime.h"
 #include "BVH.h"
 
 using namespace DirectX;
@@ -235,10 +235,10 @@ void AEditorPlayer::PickActor(const FVector& pickPosition)
     FVector rayOrigin = inverseMatrix.TransformPosition(cameraOrigin);
     FVector transformedPick = inverseMatrix.TransformPosition(pickPosition);
     FVector rayDirection = (transformedPick - rayOrigin).Normalize();
-
+   
     float closestHit = FLT_MAX;
     StaticMeshComp* hitMesh = nullptr;
-    
+    FScopeCycleCounter Timer(TEXT("Picking"));
     // BVHIntersect 함수는 BVH를 순회하며 가장 가까운 static mesh와의 교차를 검사합니다.
     if (staticMeshBVH->BVHIntersect(rayOrigin, rayDirection, closestHit, hitMesh))
     {
@@ -246,11 +246,13 @@ void AEditorPlayer::PickActor(const FVector& pickPosition)
         {
             GetWorld()->SetPickedActor(hitMesh->GetOwner());
         }
+        Timer.Finish();
     }
     else
     {
         GetWorld()->SetPickedActor(nullptr);
     }
+    
 }
 
 //void AEditorPlayer::PickActor(const FVector& pickPosition)

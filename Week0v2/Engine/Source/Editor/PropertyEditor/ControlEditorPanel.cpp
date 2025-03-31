@@ -1,4 +1,4 @@
-﻿#include "ControlEditorPanel.h"
+#include "ControlEditorPanel.h"
 
 #include "World.h"
 #include "Actors/Player.h"
@@ -14,6 +14,7 @@
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "PropertyEditor/ShowFlags.h"
+#include "Windows/FWindowsPlatformTime.h"
 
 void ControlEditorPanel::Render()
 {
@@ -69,6 +70,7 @@ void ControlEditorPanel::Render()
     ImGui::PopFont();
     
     ImGui::End();
+    CreatePerformanceOverlay();
 }
 
 void ControlEditorPanel::CreateMenuButton(ImVec2 ButtonSize, ImFont* IconFont)
@@ -490,4 +492,66 @@ void ControlEditorPanel::OnResize(HWND hWnd)
     GetClientRect(hWnd, &clientRect);
     Width = clientRect.right - clientRect.left;
     Height = clientRect.bottom - clientRect.top;
+}
+
+void ControlEditorPanel::CreatePerformanceOverlay()
+{
+    float fps = 0.0f;
+    int frameMs = 0;
+    double pickingTime = 0.0f;
+    int numAttempts = 0;
+    double accumulatedTime = 0.0f;
+    double meshRenderingTime = 0.0f;
+    double frustumCulling = 0.0f;
+
+    if (FWindowsPlatformTime::TimeMap.Contains(TEXT("Fps")))
+    {
+        double frameElapsed = FWindowsPlatformTime::TimeMap[TEXT("Fps")];
+        if (frameElapsed >= 0)
+        {
+            fps = static_cast<float>(1000.0 / frameElapsed);
+            frameMs = static_cast<int>(frameElapsed);
+        }
+    }
+
+    if (FWindowsPlatformTime::TimeMap.Contains(TEXT("Picking")))
+    {
+        pickingTime = FWindowsPlatformTime::TimeMap[TEXT("Picking")];
+        numAttempts = FWindowsPlatformTime::PickTime;
+        accumulatedTime = FWindowsPlatformTime::AccumulatedTime;
+    }
+
+    if (FWindowsPlatformTime::TimeMap.Contains(TEXT("StaticMesh")))
+    {
+        meshRenderingTime = FWindowsPlatformTime::TimeMap[TEXT("StaticMesh")];
+    }
+
+    if (FWindowsPlatformTime::TimeMap.Contains(TEXT("FrustumCulling")))
+    {
+        frustumCulling = FWindowsPlatformTime::TimeMap[TEXT("FrustumCulling")];
+    }
+
+    // 그리기 전에 창의 위치와 배경 투명도를 설정합니다.
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::SetNextWindowPos(ImVec2(10, 50));
+
+    if (ImGui::Begin("TextOnly", NULL,
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoInputs |
+        ImGuiWindowFlags_NoBackground))
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(57.0f / 255.0f, 255.0f / 255.0f, 20.0f / 255.0f, 1.0f));
+        ImGui::Text("FPS : %.2f (%d ms)", fps, frameMs);
+        ImGui::Text("Picking Time : %.2f ms", pickingTime);
+        ImGui::Text("Num Attempts : %d", numAttempts);
+        ImGui::Text("Accumulated Time : %.2f ms", accumulatedTime);
+        ImGui::Text("Static Mesh Render : %.5f ms", meshRenderingTime);
+        ImGui::Text("Frustum Culling : %.5f ms", frustumCulling);
+        ImGui::PopStyleColor();
+        ImGui::End();
+    }
 }
