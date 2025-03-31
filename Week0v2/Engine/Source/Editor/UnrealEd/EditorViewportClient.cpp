@@ -146,17 +146,17 @@ void FEditorViewportClient::Input()
     }
 
     // Focus Selected Actor
-    if (GetAsyncKeyState('F') & 0x8000)
-    {
-        if (AActor* PickedActor = GEngineLoop.GetWorld()->GetSelectedActor())
-        {
-            FViewportCameraTransform& ViewTransform = ViewTransformPerspective;
-            ViewTransform.SetLocation(
-                // TODO: 10.0f 대신, 정점의 min, max의 거리를 구해서 하면 좋을 듯
-                PickedActor->GetActorLocation() - (ViewTransform.GetForwardVector() * 10.0f)
-            );
-        }
-    }
+    //if (GetAsyncKeyState('F') & 0x8000)
+    //{
+    //    if (AActor* PickedActor = GEngineLoop.GetWorld()->GetSelectedActor())
+    //    {
+    //        FViewportCameraTransform& ViewTransform = ViewTransformPerspective;
+    //        ViewTransform.SetLocation(
+    //            // TODO: 10.0f 대신, 정점의 min, max의 거리를 구해서 하면 좋을 듯
+    //            PickedActor->GetActorLocation() - (ViewTransform.GetForwardVector() * 10.0f)
+    //        );
+    //    }
+    //}
 
     
 }

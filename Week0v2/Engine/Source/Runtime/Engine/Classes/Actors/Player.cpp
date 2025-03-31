@@ -43,14 +43,14 @@ void AEditorPlayer::Input()
             GetCursorPos(&mousePos);
             GetCursorPos(&m_LastMousePos);
 
-            uint32 UUID = GetEngine().graphicDevice.GetPixelUUID(mousePos);
-            // TArray<UObject*> objectArr = GetWorld()->GetObjectArr();
-            for ( const auto obj : TObjectRange<USceneComponent>())
-            {
-                if (obj->GetUUID() != UUID) continue;
+            //uint32 UUID = GetEngine().graphicDevice.GetPixelUUID(mousePos);
+            //// TArray<UObject*> objectArr = GetWorld()->GetObjectArr();
+            //for ( const auto obj : TObjectRange<USceneComponent>())
+            //{
+            //    if (obj->GetUUID() != UUID) continue;
 
-                UE_LOG(LogLevel::Display, *obj->GetName()); // 픽킹하는 부분
-            }
+            //    UE_LOG(LogLevel::Display, *obj->GetName()); // 픽킹하는 부분
+            //}
             ScreenToClient(GetEngine().hWnd, &mousePos);
 
             FVector pickPosition;
@@ -58,7 +58,7 @@ void AEditorPlayer::Input()
             const auto& ActiveViewport = GetEngine().GetLevelEditor()->GetActiveViewportClient();
             ScreenToViewSpace(mousePos.x, mousePos.y, ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix(), pickPosition);
             bool res = PickGizmo(pickPosition);
-            if (!res) PickActor(pickPosition);
+            if (!res) PickComponent(pickPosition);
         }
         else
         {
@@ -219,7 +219,7 @@ bool AEditorPlayer::PickGizmo(FVector& pickPosition)
     return isPickedGizmo;
 }
 
-void AEditorPlayer::PickActor(const FVector& pickPosition)
+void AEditorPlayer::PickComponent(const FVector& pickPosition)
 {
     // 기존 프리미티브 피킹 코드 대신 BVH 기반 피킹을 수행합니다.
     FBoundingVolume* staticMeshBVH = FSceneMgr::GetStaticMeshBVH();
@@ -244,62 +244,17 @@ void AEditorPlayer::PickActor(const FVector& pickPosition)
     {
         if (hitMesh)
         {
-            GetWorld()->SetPickedActor(hitMesh->GetOwner());
+            GetWorld()->SetPickedComponent(hitMesh);
         }
         Timer.Finish();
     }
     else
     {
-        GetWorld()->SetPickedActor(nullptr);
+        GetWorld()->SetPickedComponent(nullptr);
     }
     
 }
 
-//void AEditorPlayer::PickActor(const FVector& pickPosition)
-//{
-//    if (!(ShowFlags::GetInstance().currentFlags & EEngineShowFlags::SF_Primitives)) return;
-//
-//    const UActorComponent* Possible = nullptr;
-//    int maxIntersect = 0;
-//    float minDistance = FLT_MAX;
-//
-//    for (const auto iter : TObjectRange<UPrimitiveComponent>())
-//    {
-//        UPrimitiveComponent* pObj;
-//        if (iter->IsA<UPrimitiveComponent>() || iter->IsA<ULightComponentBase>())
-//        {
-//            pObj = static_cast<UPrimitiveComponent*>(iter);
-//        }
-//        else
-//        {
-//            continue;
-//        }
-//
-//        if (pObj && !pObj->IsA<UGizmoBaseComponent>())
-//        {
-//            float Distance = 0.0f;
-//            int currentIntersectCount = 0;
-//            if (RayIntersectsObject(pickPosition, pObj, Distance, currentIntersectCount))
-//            {
-//                if (Distance < minDistance)
-//                {
-//                    minDistance = Distance;
-//                    maxIntersect = currentIntersectCount;
-//                    Possible = pObj;
-//                }
-//                else if (abs(Distance - minDistance) < FLT_EPSILON && currentIntersectCount > maxIntersect)
-//                {
-//                    maxIntersect = currentIntersectCount;
-//                    Possible = pObj;
-//                }
-//            }
-//        }
-//    }
-//    if (Possible)
-//    {
-//        GetWorld()->SetPickedActor(Possible->GetOwner());
-//    }
-//}
 
 void AEditorPlayer::AddControlMode()
 {
@@ -408,6 +363,36 @@ void AEditorPlayer::PickedObjControl()
             break;
         case CM_ROTATION:
             ControlRotation(PickedActor->GetRootComponent(), Gizmo, deltaX, deltaY);
+            break;
+        default:
+            break;
+        }
+        m_LastMousePos = currentMousePos;
+    }
+}
+
+void AEditorPlayer::PickedComponentControl()
+{
+    if (GetWorld()->GetSelectedComponent() && GetWorld()->GetPickingGizmo())
+    {
+        POINT currentMousePos;
+        GetCursorPos(&currentMousePos);
+        int32 deltaX = currentMousePos.x - m_LastMousePos.x;
+        int32 deltaY = currentMousePos.y - m_LastMousePos.y;
+
+        USceneComponent* PickedComponent = GetWorld()->GetSelectedComponent();
+        UGizmoBaseComponent* Gizmo = static_cast<UGizmoBaseComponent*>(GetWorld()->GetPickingGizmo());
+        switch (cMode)
+        {
+        case CM_TRANSLATION:
+            ControlTranslation(PickedComponent, Gizmo, deltaX, deltaY);
+            break;
+        case CM_SCALE:
+            ControlScale(PickedComponent, Gizmo, deltaX, deltaY);
+
+            break;
+        case CM_ROTATION:
+            ControlRotation(PickedComponent, Gizmo, deltaX, deltaY);
             break;
         default:
             break;
