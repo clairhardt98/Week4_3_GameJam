@@ -8,6 +8,7 @@ class StaticMeshComp : public UMeshComponent
 
 public:
     StaticMeshComp() = default;
+    virtual ~StaticMeshComp() override = default;
 
     PROPERTY(int, selectedSubMeshIndex);
 
