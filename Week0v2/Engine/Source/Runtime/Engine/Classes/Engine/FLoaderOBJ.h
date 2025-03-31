@@ -694,6 +694,7 @@ public:
     static UMaterial* GetMaterial(FString name);
     static int GetMaterialNum() { return materialMap.Num(); }
     static UStaticMesh* CreateStaticMesh(FString filePath);
+    static UStaticMesh* CreateStaticMesh(FString filePath, const FMatrix& worldMatrix);
     static const TMap<FWString, UStaticMesh*>& GetStaticMeshes() { return staticMeshMap; }
     static UStaticMesh* GetStaticMesh(FWString name);
     static int GetStaticMeshNum() { return staticMeshMap.Num(); }

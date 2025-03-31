@@ -49,7 +49,7 @@ void AEditorPlayer::Input()
             {
                 if (obj->GetUUID() != UUID) continue;
 
-                UE_LOG(LogLevel::Display, *obj->GetName());
+                UE_LOG(LogLevel::Display, *obj->GetName()); // 픽킹하는 부분
             }
             ScreenToClient(GetEngine().hWnd, &mousePos);
 

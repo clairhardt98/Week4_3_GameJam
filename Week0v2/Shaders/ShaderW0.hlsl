@@ -62,16 +62,16 @@ PS_INPUT mainVS(VS_INPUT input)
     float normalThreshold = 0.001;
     float normalLen = length(input.normal);
     
-    if (normalLen < normalThreshold)
+   /* if (normalLen < normalThreshold)
     {
         output.normalFlag = 0.0;
     }
     else
-    {
+    {*/
         //output.normal = normalize(input.normal);
         output.normal = mul(input.normal, MInverseTranspose);
         output.normalFlag = 1.0;
-    }
+   // }
     output.texcoord = input.texcoord;
     return output;
 }
