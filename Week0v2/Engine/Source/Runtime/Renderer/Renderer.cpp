@@ -1030,8 +1030,10 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
 
     FObjMaterialInfo* PrevMaterial = nullptr;
    // int i = 0;
-    for (const auto& batch : CachedMergedBatches)
+    for (auto& batch : CachedMergedBatches)
     {
+        if (!batch.IsRenderable()) continue;
+
         if (batch.Material != PrevMaterial)
         {
             UpdateMaterial(*batch.Material);
@@ -1047,7 +1049,6 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         Graphics->DeviceContext->DrawIndexed(batch.NumIndices, 0, 0);
 
     }
-    i = 0;
 }
 
 
