@@ -10,7 +10,6 @@
 #include "Components/SkySphereComponent.h"
 #include "Editor/UnrealEd/SceneMgr.h"
 
-#include "EngineLoop.h"
 #include "Editor/UnrealEd/EditorViewportClient.h"
 
 

@@ -9,6 +9,9 @@
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "Windows/FWindowsPlatformTime.h"
+#include <Components/PrimitiveComponent.h>
+#include "Editor/UnrealEd/PrimitiveBatch.h"
+#include <Math/JungleMath.h>
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -163,6 +166,22 @@ void FEngineLoop::Render()
         renderer.PrepareRender();
         renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
     }
+
+    // 여기다가 BoundingBox 렌더
+    if (GWorld->GetSelectedComponent())
+    {
+        USceneComponent* Comp = GWorld->GetSelectedComponent();
+        if (Comp->IsA<UPrimitiveComponent>())
+        {
+            UPrimitiveComponent* PrimitiveComp = static_cast<UPrimitiveComponent*>(Comp);
+            FVector Location = PrimitiveComp->GetLocalLocation();
+            FVector Rotation = PrimitiveComp->GetLocalRotation();
+            FMatrix Model = JungleMath::CreateModelMatrixSIMD(Location, PrimitiveComp->GetWorldRotation(), { 1, 1, 1 });
+
+            UPrimitiveBatch::GetInstance().RenderAABB(PrimitiveComp->AABB, {0,0,0}, Model);
+        }
+    }
+    
 }
 
 void FEngineLoop::Tick()
